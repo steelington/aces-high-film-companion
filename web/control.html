@@ -39,7 +39,8 @@
   <section class="wide">
     <h2>Film</h2>
     <div class="mute" id="conn">…</div>
-    <div class="row"><input id="film" class="grow" placeholder="the film (.ahf) - full path"><button onclick="openFilm()">Open</button></div>
+    <div class="row"><select id="films" class="grow" onchange="if (this.value) call('open', {path: this.value})"><option value="">Films in the viewer's folder…</option></select></div>
+    <div class="row"><input id="film" class="grow" placeholder="or a film's full path (.ahf)"><button onclick="openFilm()">Open</button></div>
     <div class="row">
       <button id="play" onclick="call(st.playing ? 'pause' : 'play')">Play</button>
       <span id="clock">0:00.0 / 0:00.0</span>
@@ -77,7 +78,7 @@
   </section>
 </main>
 <script>
-let st = {rig: {}}, dragging = false, code = '';
+let st = {rig: {}}, dragging = false, code = '', filmsAsked = false;
 try { code = localStorage.getItem('pairCode') || ''; } catch (e) {}
 const $ = id => document.getElementById(id);
 const clock = t => { const m = Math.floor(t / 60), h = Math.floor(m / 60), s = (t - m * 60).toFixed(1);
@@ -123,7 +124,10 @@ function draw() {
   $('clock').textContent = clock(st.time || 0) + ' / ' + clock(st.length || 0);
   $('scrub').max = Math.max(1, st.length || 1); if (!dragging) $('scrub').value = st.time || 0;
   const marks = st.marks || [];
-  $('kills').textContent = marks.filter(m => m.kind === 'kill' && m.killer === st.me).length + ' kills';
+  const kills = marks.filter(m => m.kind === 'kill' && m.killer === st.me).length, hits = marks.filter(m => m.kind === 'impact' && m.shooter === st.me).length;
+  $('kills').textContent = kills ? kills + ' kills' : hits ? hits + ' runs of hits (no kill messages in this film)' : '';
+  $('out').placeholder = 'Leave empty for ' + (st.videosFolder || 'your Videos folder') + '  (no spaces)';
+  if (st.connected && !filmsAsked) { filmsAsked = true; call('films').then(r => { if (r) $('films').innerHTML = '<option value="">Films in the viewer’s folder…</option>' + r.films.map(f => `<option>${f}</option>`).join(''); }); }
   const tl = $('timeline'); tl.innerHTML = '';
   for (const m of marks) {
     const mine = m.killer === st.me || m.shooter === st.me;
