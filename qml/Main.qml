@@ -95,7 +95,7 @@ ApplicationWindow {
                 RowLayout {
                     ComboBox {
                         id: filmList; Layout.fillWidth: true
-                        model: win.films; displayText: currentIndex < 0 ? (win.films.length ? "Films in the viewer's folder…" : "No films listed yet") : currentText
+                        model: win.films; displayText: currentIndex < 0 ? (win.films.length ? "Films in the viewer's folder…" : "No films in the viewer's films folder - use Choose…") : currentText
                         currentIndex: -1
                         onActivated: openFilm(win.films[currentIndex])
                     }

@@ -9,7 +9,10 @@ socket only - the same published commands an AI uses - and adds nothing to the g
 - **Tablet page:** the same controls in a browser on your home network - open the address shown in the window and
   enter its pairing code.
 
-Status: first version, in testing.
+Status: first version, in testing. **[The manual](docs/MANUAL.md)** covers every control.
+
+**Keeping the manual current:** every change to a control, kind, slider or behaviour updates docs/MANUAL.md (and its
+picture, made with `--grab`) in the same commit.
 
 ## Build
 
