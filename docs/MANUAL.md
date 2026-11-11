@@ -89,12 +89,6 @@ shots the viewer shows the cockpit as you flew it.
 3. **Render the shots.** The viewer makes the `.mp4` with the film's sound, from your first shot to the end of your
    last. It takes a little longer than the clip plays.
 
-## On a tablet
-
-The same controls work in a browser on your home network - handy for directing from a tablet while the PC shows
-the picture. The bottom of the window shows the address and a pairing code: open the address on the tablet, enter
-the code once, and that tablet is paired. Other devices on your network can't drive the viewer without the code.
-
 ## Things to know
 
 - **Cockpit after an outside shot:** in the current viewer, when the video cuts from an outside shot straight to the

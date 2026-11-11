@@ -15,7 +15,10 @@ int main(int argc, char *argv[]) {
     QGuiApplication::setApplicationName("Aces High film companion");
     QQuickStyle::setStyle("Basic");   // the stock controls take the studio's dark palette (Main.qml)
     Core core;
-    HttpApi api(&core, 8780);
+    // The tablet page (a server on the home network) is off unless started with --tablet: waiting on HiTech's view
+    // before it ships switched on (Steely, 12 Nov 2026). Not in the manual while it's off.
+    const bool tablet = app.arguments().contains("--tablet");
+    HttpApi api(&core, 8780, tablet);
     Dock dock;
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("core", &core);

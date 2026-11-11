@@ -18,7 +18,7 @@ void respond(QTcpSocket *s, int status, const QByteArray &type, const QByteArray
 void json(QTcpSocket *s, const QJsonObject &o, int status = 200) { respond(s, status, "application/json", QJsonDocument(o).toJson(QJsonDocument::Compact)); }
 }
 
-HttpApi::HttpApi(Core *core, quint16 port, QObject *parent) : QObject(parent), m_core(core) {
+HttpApi::HttpApi(Core *core, quint16 port, bool enabled, QObject *parent) : QObject(parent), m_core(core), m_enabled(enabled) {
     // A pairing code without look-alike characters.
     const QString chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
     for (int i = 0; i < 6; ++i) m_code += chars[QRandomGenerator::global()->bounded(chars.size())];
@@ -31,7 +31,7 @@ HttpApi::HttpApi(Core *core, quint16 port, QObject *parent) : QObject(parent), m
             connect(s, &QTcpSocket::disconnected, s, &QObject::deleteLater);
         }
     });
-    m_server.listen(QHostAddress::Any, port);
+    if (m_enabled) m_server.listen(QHostAddress::Any, port);   // off: no server at all
 }
 
 void HttpApi::serve(QTcpSocket *s) {

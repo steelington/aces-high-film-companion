@@ -13,8 +13,10 @@ class HttpApi : public QObject {
     Q_OBJECT
     Q_PROPERTY(QString code READ code CONSTANT)
     Q_PROPERTY(QString address READ address CONSTANT)
+    Q_PROPERTY(bool enabled READ enabled CONSTANT)
 public:
-    HttpApi(Core *core, quint16 port, QObject *parent = nullptr);
+    HttpApi(Core *core, quint16 port, bool enabled, QObject *parent = nullptr);
+    bool enabled() const { return m_enabled; }
     QString code() const { return m_code; }
     QString address() const { return m_address; }
 
@@ -23,4 +25,5 @@ private:
     Core *m_core;
     QTcpServer m_server;
     QString m_code, m_address;
+    bool m_enabled = false;
 };

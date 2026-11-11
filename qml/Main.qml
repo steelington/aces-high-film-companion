@@ -235,7 +235,7 @@ ApplicationWindow {
         }
 
         // ---- footer
-        Label { text: "On a tablet: open " + api.address + " and enter the code " + api.code; color: theme.muted }
+        Label { visible: api.enabled; text: "On a tablet: open " + api.address + " and enter the code " + api.code; color: theme.muted }
         Label { text: win.status; wrapMode: Text.Wrap; Layout.fillWidth: true; color: theme.muted }
     }
 }
