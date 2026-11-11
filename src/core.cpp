@@ -6,6 +6,7 @@
 #include <QProcess>
 #include <QRegularExpression>
 #include <QSettings>
+#include <QStandardPaths>
 
 namespace {
 QString n(double v, int dp = 3) { return QString::number(v, 'f', dp); }
@@ -35,7 +36,15 @@ QJsonObject Core::state() const {
     return {{"connected", m_link.connected()}, {"protocol", m_link.protocol()}, {"film", m_film}, {"length", m_length},
             {"time", m_time}, {"playing", m_playing}, {"me", m_me}, {"preview", m_preview}, {"rendering", m_rendering},
             {"waiting", m_waiting}, {"viewerPath", m_viewerPath}, {"rig", m_rig.toJson()}, {"shots", shotsJson()["shots"]},
-            {"marks", m_marks}, {"planes", m_planes}, {"lastRender", m_lastRender}};
+            {"marks", m_marks}, {"planes", m_planes}, {"lastRender", m_lastRender}, {"videosFolder", videosFolder()}};
+}
+
+// Where renders go by default: AcesHighFilms in the user's Videos folder, or C:\AcesHighFilms if that path has a
+// space (the viewer's video command can't take one).
+QString Core::videosFolder() const {
+    const QString v = QStandardPaths::writableLocation(QStandardPaths::MoviesLocation);
+    const QString dir = QDir::toNativeSeparators(QDir(v).filePath("AcesHighFilms"));
+    return dir.contains(' ') ? QStringLiteral("C:\\AcesHighFilms") : dir;
 }
 
 QJsonObject Core::shotsJson() const {
@@ -283,8 +292,17 @@ void Core::call(const QString &method, const QJsonObject &p, Done done) {
     if (method == "render") {
         const double a = p["start"].toDouble(m_shots.isEmpty() ? m_time : m_shots.first().start);
         const double b = p["end"].toDouble(m_shots.isEmpty() ? a + 10 : m_shots.last().start + m_shots.last().duration);
-        const QString path = QDir::toNativeSeparators(p["path"].toString());
+        // No path, or just a folder: name the file from the film and the time, in the videos folder.
+        QString path = QDir::toNativeSeparators(p["path"].toString().trimmed());
+        if (path.isEmpty() || QFileInfo(path).isDir()) {
+            const QString dir = path.isEmpty() ? videosFolder() : path;
+            QString name = QFileInfo(m_film).completeBaseName() + QString("_%1").arg(int(a));
+            name.replace(QRegularExpression("[^A-Za-z0-9_.-]+"), "_");
+            path = QDir::toNativeSeparators(QDir(dir).filePath(name + ".mp4"));
+        }
+        if (!path.endsWith(".mp4", Qt::CaseInsensitive)) path += ".mp4";
         if (path.contains(' ')) { fail("the video's path can't contain spaces (the film viewer's rule): " + path); return; }
+        QDir().mkpath(QFileInfo(path).absolutePath());
         const int w = p["width"].toInt(1920), h = p["height"].toInt(1080), fps = p["fps"].toInt(60);
         m_preview = false; applyCameras();
         m_rendering = true; emit changed();

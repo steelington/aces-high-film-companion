@@ -17,6 +17,7 @@ qt_add_executable(film_companion WIN32
     src/rig.cpp src/rig.h
     src/core.cpp src/core.h
     src/http_api.cpp src/http_api.h
+    src/dock.cpp src/dock.h
 )
 qt_add_qml_module(film_companion
     URI Companion

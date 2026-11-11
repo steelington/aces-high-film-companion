@@ -4,6 +4,8 @@
 #include <QQmlContext>
 #include "core.h"
 #include "http_api.h"
+#include "dock.h"
+#include <QQuickWindow>
 
 int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
@@ -11,10 +13,13 @@ int main(int argc, char *argv[]) {
     QGuiApplication::setApplicationName("Aces High film companion");
     Core core;
     HttpApi api(&core, 8780);
+    Dock dock;
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("core", &core);
     engine.rootContext()->setContextProperty("api", &api);
+    engine.rootContext()->setContextProperty("dock", &dock);
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app, [] { QCoreApplication::exit(1); }, Qt::QueuedConnection);
     engine.loadFromModule("Companion", "Main");
+    if (!engine.rootObjects().isEmpty()) dock.setCompanion(qobject_cast<QQuickWindow *>(engine.rootObjects().first()));
     return app.exec();
 }

@@ -40,6 +40,7 @@ private:
     void readPlanes(std::function<void()> then = {});
     void applyCameras();                  // the live rig, or the shot list, into the viewer
     QJsonObject shotsJson() const;
+    QString videosFolder() const;
     bool planeOf(int id, Pose &p) const;
 
     ViewerLink m_link;
