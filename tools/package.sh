@@ -17,6 +17,9 @@ cp build/Release/film_companion.exe build/dist/
 CRT=$(ls -d "$(cygpath -u "$VS")"/VC/Redist/MSVC/*/x64/Microsoft.VC*.CRT | sort | tail -1)
 cp "$CRT"/*.dll build/dist/
 cp README.md build/dist/
+# The manual as one HTML page with its pictures inside, built from docs/MANUAL.md.
+python -I tools/build_manual.py
+cp docs/MANUAL.html build/dist/
 
 echo "build/dist: $(du -sh build/dist | cut -f1), runtime from $(basename "$CRT"):"
 ls build/dist | grep -iE "vcruntime|msvcp"

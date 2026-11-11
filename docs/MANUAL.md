@@ -54,6 +54,8 @@ sliders: the viewer's picture follows as you move them.
 | Hung here | Leaves a camera standing in the sky where the outside camera is now, turning to watch you fly past. |
 | Ride his bomb | Rides your next bomb, rocket or torpedo from release to impact, then holds on the blast. Set it just before the drop. |
 
+![A padlock from the wing, keeping another pilot in frame](img/padlock.png)
+
 **Places** put the camera at a starting point round you: Behind, Behind high, Left side, Right side, Ahead looking
 back, Below, and Far with a long lens.
 
@@ -75,6 +77,8 @@ A film is a list of shots, each a camera from one moment to the next.
 2. Set up the camera.
 3. Set how long it lasts (seconds) and press **Add this camera from …**.
 4. Move on and do the next one.
+
+![Three shots: outside behind, the cockpit, then outside from the right](img/shots.png)
 
 Each shot in the list has **Go** (jump to it), **Use this camera** (replace its camera with the live one - set up
 something better, then press it) and **✕** (delete). The switch beside **Add** flips between **Showing the live

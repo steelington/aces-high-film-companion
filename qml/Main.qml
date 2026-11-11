@@ -220,7 +220,7 @@ ApplicationWindow {
             ColumnLayout {
                 anchors.fill: parent
                 RowLayout {
-                    TextField { id: outPath; Layout.fillWidth: true; placeholderText: "Leave empty for " + (st.videosFolder || "your Videos folder") + "  (no spaces)" }
+                    TextField { id: outPath; Layout.fillWidth: true; placeholderText: "Leave empty for " + (grabbing || !st.videosFolder ? "your Videos\\AcesHighFilms folder" : st.videosFolder) + "  (no spaces)" }
                     ComboBox { id: size; model: ["1280x720", "1920x1080", "3840x2160"]; currentIndex: 1 }
                     ComboBox { id: fps; model: ["30", "60"]; currentIndex: 1 }
                 }
@@ -235,7 +235,7 @@ ApplicationWindow {
         }
 
         // ---- footer
-        Label { visible: api.enabled; text: "On a tablet: open " + api.address + " and enter the code " + api.code; color: theme.muted }
-        Label { text: win.status; wrapMode: Text.Wrap; Layout.fillWidth: true; color: theme.muted }
+        Label { visible: api.enabled && !grabbing; text: "On a tablet: open " + api.address + " and enter the code " + api.code; color: theme.muted }
+        Label { visible: !grabbing; text: win.status; wrapMode: Text.Wrap; Layout.fillWidth: true; color: theme.muted }
     }
 }

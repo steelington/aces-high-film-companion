@@ -24,16 +24,20 @@ int main(int argc, char *argv[]) {
     engine.rootContext()->setContextProperty("core", &core);
     engine.rootContext()->setContextProperty("api", &api);
     engine.rootContext()->setContextProperty("dock", &dock);
+    engine.rootContext()->setContextProperty("grabbing", app.arguments().contains("--grab"));   // pictures for the manual
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app, [] { QCoreApplication::exit(1); }, Qt::QueuedConnection);
     engine.loadFromModule("Companion", "Main");
     auto *window = engine.rootObjects().isEmpty() ? nullptr : qobject_cast<QQuickWindow *>(engine.rootObjects().first());
     if (window) dock.setCompanion(window);
     // --grab <file.png>: save a picture of the window after it has settled, then quit (for the manual's screenshots;
     // with QT_QPA_PLATFORM=offscreen nothing appears on screen).
+    // --grab-after <s>: wait that long first (time to open a film and set a camera through the local API).
     const int g = app.arguments().indexOf("--grab");
     if (window && g > 0 && g + 1 < app.arguments().size()) {
         const QString file = app.arguments().at(g + 1);
-        QTimer::singleShot(2500, &app, [window, file] { window->grabWindow().save(file); QCoreApplication::quit(); });
+        const int a = app.arguments().indexOf("--grab-after");
+        const int ms = a > 0 && a + 1 < app.arguments().size() ? int(app.arguments().at(a + 1).toDouble() * 1000) : 2500;
+        QTimer::singleShot(ms, &app, [window, file] { window->grabWindow().save(file); QCoreApplication::quit(); });
     }
     return app.exec();
 }

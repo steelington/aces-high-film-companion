@@ -7,6 +7,7 @@
 #include <QRegularExpression>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QHash>
 
 namespace {
 QString n(double v, int dp = 3) { return QString::number(v, 'f', dp); }
@@ -238,7 +239,10 @@ void Core::call(const QString &method, const QJsonObject &p, Done done) {
     if (method == "preview") { m_preview = p["on"].toBool(true); emit changed(); applyCameras(); ok(); return; }
     if (method == "addShot") {
         Shot s; s.start = p.contains("start") ? p["start"].toDouble() : m_time; s.duration = p["duration"].toDouble(4);
-        s.label = p["label"].toString(m_rig.kind); s.rig = m_rig;
+        // Named as the buttons are (the window's words, not the rig's).
+        static const QHash<QString, QString> names{{"cockpit", "Cockpit"}, {"seat", "Cockpit, looking ahead"}, {"orbit", "Outside"},
+                                                   {"chase", "Chase"}, {"padlock", "Padlock"}, {"hung", "Hung camera"}, {"weapon", "Riding his bomb"}};
+        s.label = p["label"].toString(names.value(m_rig.kind, m_rig.kind)); s.rig = m_rig;
         int at = 0; while (at < m_shots.size() && m_shots[at].start <= s.start) ++at;
         m_shots.insert(at, s);
         emit changed(); ok(shotsJson());
