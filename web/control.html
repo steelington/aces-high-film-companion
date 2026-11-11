@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Film companion</title>
+<style>
+  :root { --bg: #f4f4f2; --card: #fff; --ink: #1d1d1b; --mute: #6b6b66; --line: #ddd; --accent: #2f6db5; --kill: #d22; --hit: #e90; --land: #39c; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #161615; --card: #22221f; --ink: #eee; --mute: #9a9a92; --line: #3a3a36; --accent: #6aa5ef; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.4 system-ui, sans-serif; }
+  main { max-width: 1200px; margin: 0 auto; padding: 16px; display: grid; gap: 14px; grid-template-columns: 1fr; }
+  @media (min-width: 900px) { main { grid-template-columns: 1fr 1fr; } .wide { grid-column: 1 / -1; } }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+  h2 { margin: 0 0 10px; font-size: 15px; text-transform: uppercase; letter-spacing: .04em; color: var(--mute); }
+  button { font: inherit; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); min-height: 44px; }
+  button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button:disabled { opacity: .5; }
+  input, select { font: inherit; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); min-height: 44px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
+  .grow { flex: 1 1 200px; }
+  .slider { display: grid; grid-template-columns: 150px 1fr 64px; gap: 10px; align-items: center; margin: 8px 0; }
+  input[type=range] { width: 100%; height: 36px; }
+  #timeline { position: relative; height: 22px; margin-top: 6px; }
+  #timeline span { position: absolute; top: 0; width: 3px; height: 16px; border-radius: 1px; cursor: pointer; }
+  .mute { color: var(--mute); font-size: 14px; }
+  .shot { display: grid; grid-template-columns: 120px 1fr auto auto auto; gap: 8px; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); }
+  #pair { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <section class="wide" id="pair">
+    <h2>Pair this device</h2>
+    <div class="row"><span>Enter the code shown in the companion's window on the PC:</span>
+      <input id="code" size="8" autocomplete="off"><button onclick="pair()">Pair</button></div>
+  </section>
+
+  <section class="wide">
+    <h2>Film</h2>
+    <div class="mute" id="conn">…</div>
+    <div class="row"><input id="film" class="grow" placeholder="the film (.ahf) - full path"><button onclick="openFilm()">Open</button></div>
+    <div class="row">
+      <button id="play" onclick="call(st.playing ? 'pause' : 'play')">Play</button>
+      <span id="clock">0:00.0 / 0:00.0</span>
+      <span class="mute" id="kills"></span>
+    </div>
+    <div id="timeline"></div>
+    <input type="range" id="scrub" min="0" max="1" step="0.1" value="0">
+  </section>
+
+  <section>
+    <h2>Camera</h2>
+    <div class="row" id="kinds"></div>
+    <div class="row" id="places"></div>
+    <div class="row" id="padlockRow" style="display:none"><span>Keep in frame:</span><select id="target" class="grow"></select></div>
+    <div id="sliders"></div>
+  </section>
+
+  <section>
+    <h2 id="shotsTitle">Shots</h2>
+    <div class="row"><button id="addShot" onclick="call('addShot', {duration: +shotLen.value})">Add this camera</button>
+      <input id="shotLen" type="number" min="1" max="60" value="4" style="width:80px"> s</div>
+    <div id="shots"></div>
+    <div class="row"><button id="mode" onclick="call('preview', {on: !st.preview})">Play the shots</button></div>
+  </section>
+
+  <section class="wide">
+    <h2>Render</h2>
+    <div class="row">
+      <input id="out" class="grow" placeholder="C:\Videos\mykill.mp4 (no spaces)">
+      <select id="size"><option>1280x720</option><option selected>1920x1080</option><option>3840x2160</option></select>
+      <select id="fps"><option>30</option><option selected>60</option></select>
+      <button id="render" onclick="render()">Render the shots</button>
+    </div>
+    <div class="mute" id="status"></div>
+  </section>
+</main>
+<script>
+let st = {rig: {}}, dragging = false, code = '';
+try { code = localStorage.getItem('pairCode') || ''; } catch (e) {}
+const $ = id => document.getElementById(id);
+const clock = t => { const m = Math.floor(t / 60), h = Math.floor(m / 60), s = (t - m * 60).toFixed(1);
+  return (h ? h + ':' + String(m % 60).padStart(2, '0') : m) + ':' + (s < 10 ? '0' : '') + s; };
+
+async function call(method, params = {}) {
+  const r = await fetch('/call', {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Code': code}, body: JSON.stringify({method, params})});
+  const j = await r.json();
+  if (j.pair) { $('pair').style.display = 'block'; return null; }
+  if (!j.ok) { $('status').textContent = j.error; return null; }
+  if (method !== 'status') refresh();
+  return j.result;
+}
+function pair() { code = $('code').value.trim().toUpperCase(); try { localStorage.setItem('pairCode', code); } catch (e) {} $('pair').style.display = 'none'; refresh(); }
+function rig(changes) { call('setRig', {rig: Object.assign({}, st.rig, changes)}); }
+function openFilm() { call('open', {path: $('film').value.trim()}); }
+function render() { const [w, h] = $('size').value.split('x'); call('render', {path: $('out').value.trim(), width: +w, height: +h, fps: +$('fps').value}); }
+
+const KINDS = [['cockpit', 'Cockpit'], ['seat', 'Cockpit, looking ahead'], ['orbit', 'Outside'], ['chase', 'Chase'], ['padlock', 'Padlock'], ['hung', 'Hung here'], ['weapon', 'Ride his bomb']];
+const PLACES = [['Behind', 0, 12, 90], ['Behind, high', 0, 35, 140], ['Left side', -90, 5, 70], ['Right side', 90, 5, 70], ['Ahead, looking back', 180, 8, 90], ['Below', 0, -40, 80], ['Far, long lens', 20, 8, 600]];
+const SLIDERS = [['distance', 'Distance', 20, 1500, ' ft'], ['angle', 'Angle round him', -180, 180, '°'], ['height', 'Height', -80, 80, '°'], ['zoom', 'Lens (wide ↔ long)', 5, 140, '°'], ['roll', 'Roll', -45, 45, '°']];
+for (const [k, label] of KINDS) { const b = document.createElement('button'); b.textContent = label; b.dataset.kind = k;
+  b.onclick = () => k === 'hung' ? call('hangHere') : rig({kind: k}); $('kinds').append(b); }
+for (const [label, a, h, d] of PLACES) { const b = document.createElement('button'); b.textContent = label;
+  b.onclick = () => rig({angle: a, height: h, distance: d, zoom: d > 300 ? 20 : st.rig.zoom}); $('places').append(b); }
+for (const [k, label, lo, hi, unit] of SLIDERS) {
+  const d = document.createElement('div'); d.className = 'slider';
+  d.innerHTML = `<span>${label}</span><input type="range" min="${lo}" max="${hi}" step="1" id="s_${k}"><span id="v_${k}"></span>`;
+  $('sliders').append(d);
+  let last = 0;
+  d.querySelector('input').addEventListener('input', e => { $('v_' + k).textContent = e.target.value + unit;
+    const now = Date.now(); if (now - last > 90) { last = now; rig({[k]: +e.target.value}); } });   // about 10 a second: the viewer keeps up
+  d.querySelector('input').addEventListener('change', e => rig({[k]: +e.target.value}));
+}
+$('target').onchange = e => rig({target: +e.target.value});
+$('scrub').addEventListener('input', e => { dragging = true; call('seek', {time: +e.target.value, rough: true}); });
+$('scrub').addEventListener('change', e => { dragging = false; call('seek', {time: +e.target.value}); });
+
+function draw() {
+  $('conn').textContent = st.connected ? 'Connected to the film viewer' + (st.waiting ? ' - it is asking you something: ' + st.waiting : '') : 'The film viewer isn\'t running - start it on the PC';
+  if (document.activeElement !== $('film') && st.film) $('film').value = st.film;
+  $('play').textContent = st.playing ? 'Pause' : 'Play';
+  $('clock').textContent = clock(st.time || 0) + ' / ' + clock(st.length || 0);
+  $('scrub').max = Math.max(1, st.length || 1); if (!dragging) $('scrub').value = st.time || 0;
+  const marks = st.marks || [];
+  $('kills').textContent = marks.filter(m => m.kind === 'kill' && m.killer === st.me).length + ' kills';
+  const tl = $('timeline'); tl.innerHTML = '';
+  for (const m of marks) {
+    const mine = m.killer === st.me || m.shooter === st.me;
+    if (!(m.kind === 'kill' || mine || m.kind === 'land')) continue;
+    const s = document.createElement('span');
+    s.style.left = (100 * m.t / Math.max(1, st.length)) + '%';
+    s.style.background = m.kind === 'kill' ? (mine ? 'var(--kill)' : '#999') : m.kind === 'impact' ? 'var(--hit)' : 'var(--land)';
+    s.title = clock(m.t) + '  ' + m.text; s.onclick = () => call('seek', {time: Math.max(0, m.t - 6)});
+    tl.append(s);
+  }
+  for (const b of $('kinds').children) b.classList.toggle('on', b.dataset.kind === st.rig.kind);
+  $('padlockRow').style.display = st.rig.kind === 'padlock' ? 'flex' : 'none';
+  const others = (st.planes || []).filter(p => !p.me);
+  if ($('target').options.length !== others.length) $('target').innerHTML = others.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  for (const [k, , , , unit] of SLIDERS) { const el = $('s_' + k); if (document.activeElement !== el) el.value = st.rig[k]; $('v_' + k).textContent = Math.round(st.rig[k]) + unit; }
+  const shots = st.shots || [];
+  $('shotsTitle').textContent = 'Shots (' + shots.length + ')';
+  $('addShot').textContent = 'Add this camera from ' + clock(st.time || 0);
+  $('shots').innerHTML = '';
+  shots.forEach((s, i) => { const d = document.createElement('div'); d.className = 'shot';
+    d.innerHTML = `<span>${clock(s.start)} +${s.duration.toFixed(1)} s</span><span>${s.label}</span>`;
+    for (const [label, fn] of [['Go', () => call('seek', {time: s.start})], ['Use this camera', () => call('updateShot', {index: i, useCurrentRig: true})], ['✕', () => call('deleteShot', {index: i})]]) {
+      const b = document.createElement('button'); b.textContent = label; b.onclick = fn; d.append(b); }
+    $('shots').append(d); });
+  $('mode').textContent = st.preview ? 'Play the shots' : 'Back to the live camera';
+  $('render').disabled = st.rendering || !shots.length; $('render').textContent = st.rendering ? 'Rendering…' : 'Render the shots';
+  if (st.lastRender) $('status').textContent = 'Last render: ' + st.lastRender;
+}
+async function refresh() { const r = await call('status'); if (r) { st = r; draw(); } }
+refresh(); setInterval(refresh, 500);
+</script>
+</body>
+</html>
