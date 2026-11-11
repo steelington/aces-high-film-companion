@@ -6,9 +6,40 @@ import QtQuick.Dialogs
 // The desktop face. Every button is one core method (core.invoke), the same ones the tablet page calls.
 ApplicationWindow {
     id: win
-    width: 600; height: 1000
+    width: 620; height: 1180
+    minimumWidth: 560; minimumHeight: 980
     visible: true
-    title: "Aces High film companion"
+    title: st.film ? "Aces High film companion — " + st.film.split(/[\\\/]/).pop() : "Aces High film companion"
+    // The studio's look: dark panels, olive highlight, blue accents, red for kills.
+    readonly property QtObject theme: QtObject {
+        readonly property color background: "#0f1419"
+        readonly property color panel: "#1a1f26"
+        readonly property color alternate: "#242b33"
+        readonly property color border: "#2e3440"
+        readonly property color olive: "#4a5a42"
+        readonly property color cream: "#e5e9f0"
+        readonly property color text: "#d8dee9"
+        readonly property color muted: "#8b93a1"
+        readonly property color green: "#10b981"
+        readonly property color blue: "#5b8def"
+        readonly property color red: "#e5484d"
+        readonly property color amber: "#e0a030"
+    }
+    color: theme.background
+    font.family: "Segoe UI"
+    font.pixelSize: 14
+    palette.window: theme.panel
+    palette.base: theme.alternate
+    palette.button: theme.alternate
+    palette.text: theme.text
+    palette.buttonText: theme.text
+    palette.windowText: theme.text
+    palette.placeholderText: theme.muted
+    palette.highlight: theme.olive
+    palette.highlightedText: theme.cream
+    palette.mid: theme.border
+    palette.light: theme.alternate
+    palette.dark: theme.border
 
     readonly property var st: core.state
     readonly property var marks: st.marks || []
@@ -46,7 +77,7 @@ ApplicationWindow {
         // ---- connection
         RowLayout {
             Layout.fillWidth: true
-            Label { text: st.connected ? "Connected to the film viewer" : "The film viewer isn't running"; font.bold: true; Layout.fillWidth: true }
+            Label { text: st.connected ? "● Connected to the film viewer" : "○ The film viewer isn't running"; color: st.connected ? theme.green : theme.amber; font.bold: true; Layout.fillWidth: true }
             Switch { text: "Keep the viewer beside me"; checked: dock.enabled; onToggled: dock.enabled = checked }
         }
         RowLayout {
@@ -54,7 +85,7 @@ ApplicationWindow {
             TextField { id: viewerPath; Layout.fillWidth: true; text: st.viewerPath; placeholderText: "…\\Aces High III\\ah32\\ahfilmai.exe" }
             Button { text: "Start it"; onClicked: core.invoke("startViewer", {path: viewerPath.text}) }
         }
-        Label { visible: st.waiting !== ""; text: "The film viewer is asking you something - look at its window: " + st.waiting; wrapMode: Text.Wrap; color: "#c33"; Layout.fillWidth: true }
+        Label { visible: st.waiting !== ""; text: "The film viewer is asking you something - look at its window: " + st.waiting; wrapMode: Text.Wrap; color: theme.red; Layout.fillWidth: true }
 
         // ---- film and timeline
         GroupBox {
@@ -87,7 +118,7 @@ ApplicationWindow {
                             visible: modelData.kind === "kill" || mine || modelData.kind === "land"
                             x: st.length > 0 ? (modelData.t / st.length) * (parent.width - 2) : 0; y: 0
                             width: modelData.kind === "kill" ? 3 : 2; height: modelData.kind === "kill" ? 14 : 8
-                            color: modelData.kind === "kill" ? (mine ? "#d22" : "#999") : modelData.kind === "impact" ? "#e90" : "#39c"
+                            color: modelData.kind === "kill" ? (mine ? theme.red : theme.muted) : modelData.kind === "impact" ? theme.amber : theme.blue
                             ToolTip.visible: ma.containsMouse; ToolTip.text: clock(modelData.t) + "  " + modelData.text
                             MouseArea { id: ma; anchors.fill: parent; anchors.margins: -3; hoverEnabled: true; onClicked: core.invoke("seek", {time: Math.max(0, modelData.t - 6)}) }
                         }
@@ -114,6 +145,7 @@ ApplicationWindow {
                                 ["padlock", "Padlock"], ["hung", "Hung here"], ["weapon", "Ride his bomb"]]
                         Button {
                             text: modelData[1]; checkable: true; checked: st.rig.kind === modelData[0]
+                            palette.dark: theme.olive; palette.brightText: theme.cream   // Basic draws a checked button in "dark": the studio's olive
                             onClicked: modelData[0] === "hung" ? core.invoke("hangHere") : rig({kind: modelData[0]})
                         }
                     }
@@ -156,7 +188,7 @@ ApplicationWindow {
 
         // ---- shots (fills the rest of the window)
         GroupBox {
-            title: "Shots (" + (st.shots || []).length + ")"; Layout.fillWidth: true; Layout.fillHeight: true
+            title: "Shots (" + (st.shots || []).length + ")"; Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 190
             ColumnLayout {
                 anchors.fill: parent
                 RowLayout {
@@ -177,7 +209,7 @@ ApplicationWindow {
                         Button { text: "Use this camera"; onClicked: core.invoke("updateShot", {index: index, useCurrentRig: true}) }
                         Button { text: "✕"; onClicked: core.invoke("deleteShot", {index: index}) }
                     }
-                    Label { anchors.centerIn: parent; visible: parent.count === 0; color: "#888"; text: "Set up a camera, then \"Add this camera\" - one shot at a time, in film order." }
+                    Label { anchors.centerIn: parent; visible: parent.count === 0; color: theme.muted; text: "Set up a camera, then \"Add this camera\" - one shot at a time, in film order." }
                 }
             }
         }
@@ -203,7 +235,7 @@ ApplicationWindow {
         }
 
         // ---- footer
-        Label { text: "On a tablet: open " + api.address + " and enter the code " + api.code; color: "#666" }
-        Label { text: win.status; wrapMode: Text.Wrap; Layout.fillWidth: true; color: "#666" }
+        Label { text: "On a tablet: open " + api.address + " and enter the code " + api.code; color: theme.muted }
+        Label { text: win.status; wrapMode: Text.Wrap; Layout.fillWidth: true; color: theme.muted }
     }
 }

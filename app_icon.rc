@@ -1,0 +1,3 @@
+// The app's icon (the same as AH Film Studio's). Qt on Windows takes IDI_ICON1 as the default icon for every
+// window, so the title bar and taskbar show it too.
+IDI_ICON1 ICON "assets/app_icon.ico"

@@ -59,6 +59,12 @@ void HttpApi::serve(QTcpSocket *s) {
         respond(s, 200, "text/html; charset=utf-8", f.readAll());
         return;
     }
+    if (verb == "GET" && (path == "/icon.png" || path == "/favicon.ico")) {
+        QFile f(":/qt/qml/Companion/assets/app_icon.png");
+        f.open(QIODevice::ReadOnly);
+        respond(s, 200, "image/png", f.readAll());
+        return;
+    }
     if (verb != "POST" || path != "/call") { respond(s, 404, "text/plain", "not here"); return; }
     if (!local && code != m_code.toUtf8()) { json(s, {{"ok", false}, {"error", "pairing code needed"}, {"pair", true}}, 403); return; }
     const QJsonObject req = QJsonDocument::fromJson(body).object();
