@@ -9,7 +9,7 @@ The one list. Update it with every change; the manual (MANUAL.md) changes with e
 - [ ] The tablet page brought up to date with the window (shot timing, timeline bars and drops, save/load, kill
       sequence, Browse) - while it ships switched off, before it's switched on.
 - [ ] More kinds from the director's playbook as one-click recipes: the fly-by, gear cameras for landings, the bomb run.
-- [ ] Packaging: a zip of build/dist named with the version, for the release page.
+- [x] Packaging: a zip of build/dist named with the version, for the release page (package.sh, 12 Nov 2026: build/aces-high-film-companion-<ver>-win64.zip + .sha256; version from CMakeLists project()).
 
 ## Waiting on others
 - [ ] **Tablet page:** off unless started with `--tablet`, until HiTech gives his view (hitech repo direct/NEXT.md).

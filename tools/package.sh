@@ -23,3 +23,17 @@ cp docs/MANUAL.html build/dist/
 
 echo "build/dist: $(du -sh build/dist | cut -f1), runtime from $(basename "$CRT"):"
 ls build/dist | grep -iE "vcruntime|msvcp"
+
+# The zip for the release page, named with the version from CMakeLists.txt's project() line.
+VER=$(sed -n 's/^project(aces_high_film_companion VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
+[[ -n "$VER" ]] || { echo "no version in CMakeLists.txt's project() line"; exit 1; }
+SZ=$(command -v 7z || command -v 7z.exe || true)
+for z in "/d/APPS/7-Zip/7z.exe" "/c/Program Files/7-Zip/7z.exe"; do [[ -n "${SZ:-}" ]] && break; [[ -x "$z" ]] && SZ="$z"; done
+[[ -n "${SZ:-}" ]] || { echo "7-Zip not found (needed for the zip)"; exit 1; }
+ZIP="build/aces-high-film-companion-$VER-win64.zip"
+rm -f "$ZIP" && rm -rf "build/zipstage" && mkdir -p "build/zipstage"
+cp -r build/dist "build/zipstage/aces-high-film-companion-$VER"
+( cd build/zipstage && "$SZ" a -tzip -mx=9 "../$(basename "$ZIP")" "aces-high-film-companion-$VER" > /dev/null )
+rm -rf build/zipstage
+( cd build && sha256sum "$(basename "$ZIP")" > "$(basename "$ZIP").sha256" )
+echo "$ZIP: $(du -h "$ZIP" | cut -f1), $(cut -c1-16 "$ZIP.sha256")..."

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(aces_high_film_companion LANGUAGES CXX)
+project(aces_high_film_companion VERSION 0.1.0 LANGUAGES CXX)
 
 # Aces High film companion: camera controls for the Aces High film viewer, through its socket only.
 # A desktop window (QML) and a tablet page (web/control.html, served by the app) over one core.
