@@ -62,6 +62,16 @@ ApplicationWindow {
     }
     Timer { id: filmsAsked; interval: 5000 }
 
+    // A shot list saved beside the film (plain JSON: its shots and their cameras), to come back to or share.
+    function localPath(url) { return decodeURIComponent(url.toString().replace(/^file:\/\/\//, "")).replace(/\//g, "\\") }
+    FileDialog {
+        id: planSave; title: "Save the shots"; fileMode: FileDialog.SaveFile; nameFilters: ["Shot lists (*.shots.json)"]
+        onAccepted: { let p = localPath(selectedFile); if (!p.endsWith(".shots.json")) p += ".shots.json"; core.invoke("savePlan", {path: p}) }
+    }
+    FileDialog {
+        id: planLoad; title: "Load shots"; nameFilters: ["Shot lists (*.shots.json)"]
+        onAccepted: core.invoke("loadPlan", {path: localPath(selectedFile)})
+    }
     FileDialog {
         id: filmDialog
         title: "Choose a film"
@@ -108,17 +118,29 @@ ApplicationWindow {
                     Label { text: myKills > 0 ? myKills + " kills" : myHits > 0 ? myHits + " runs of hits (no kill messages in this film)" : "" }
                 }
                 // The timeline: scrub with quick rough seeks, an exact seek where it's let go. Marks above it:
-                // red your kills (grey others'), orange your hits, blue landings. Click one to go a few seconds before.
+                // red your kills (grey others'), amber your hits, green your bomb/rocket drops, blue landings - click
+                // one to go a few seconds before. Your shots are the olive bars under them - click one to go to it.
                 Item {
-                    Layout.fillWidth: true; height: 44
+                    Layout.fillWidth: true; height: 54
+                    Repeater {
+                        model: st.shots || []
+                        Rectangle {
+                            x: st.length > 0 ? (modelData.start / st.length) * parent.width : 0; y: 18
+                            width: st.length > 0 ? Math.max(3, modelData.duration / st.length * parent.width - 1) : 0; height: 7; radius: 2
+                            color: theme.olive; border.color: Qt.lighter(theme.olive, 1.4)
+                            ToolTip.visible: sa.containsMouse; ToolTip.text: clock(modelData.start) + "  " + modelData.label + ", " + modelData.duration.toFixed(1) + " s"
+                            MouseArea { id: sa; anchors.fill: parent; hoverEnabled: true; onClicked: core.invoke("seek", {time: modelData.start}) }
+                        }
+                    }
                     Repeater {
                         model: win.marks
                         Rectangle {
-                            readonly property bool mine: modelData.killer === st.me || modelData.shooter === st.me
+                            readonly property bool mine: modelData.killer === st.me || modelData.shooter === st.me || (modelData.kind === "drop" && modelData.who === st.me)
                             visible: modelData.kind === "kill" || mine || modelData.kind === "land"
                             x: st.length > 0 ? (modelData.t / st.length) * (parent.width - 2) : 0; y: 0
                             width: modelData.kind === "kill" ? 3 : 2; height: modelData.kind === "kill" ? 14 : 8
-                            color: modelData.kind === "kill" ? (mine ? theme.red : theme.muted) : modelData.kind === "impact" ? theme.amber : theme.blue
+                            color: modelData.kind === "kill" ? (mine ? theme.red : theme.muted) : modelData.kind === "impact" ? theme.amber
+                                 : modelData.kind === "drop" ? theme.green : theme.blue
                             ToolTip.visible: ma.containsMouse; ToolTip.text: clock(modelData.t) + "  " + modelData.text
                             MouseArea { id: ma; anchors.fill: parent; anchors.margins: -3; hoverEnabled: true; onClicked: core.invoke("seek", {time: Math.max(0, modelData.t - 6)}) }
                         }
@@ -203,13 +225,30 @@ ApplicationWindow {
                     model: st.shots || []
                     delegate: RowLayout {
                         width: ListView.view.width
-                        Label { text: clock(modelData.start) + "  +" + modelData.duration.toFixed(1) + " s"; Layout.preferredWidth: 130 }
-                        Label { text: modelData.label; Layout.fillWidth: true; elide: Text.ElideRight }
-                        Button { text: "Go"; onClicked: core.invoke("seek", {time: modelData.start}) }
-                        Button { text: "Use this camera"; onClicked: core.invoke("updateShot", {index: index, useCurrentRig: true}) }
-                        Button { text: "✕"; onClicked: core.invoke("deleteShot", {index: index}) }
+                        // Its start, nudged half a second earlier or later, and its length, half a second shorter or longer.
+                        Button { text: "◂"; implicitWidth: 34; ToolTip.visible: hovered; ToolTip.text: "Start half a second earlier"
+                                 onClicked: core.invoke("updateShot", {index: index, start: Math.max(0, modelData.start - 0.5)}) }
+                        Label { text: clock(modelData.start); Layout.preferredWidth: 64; horizontalAlignment: Text.AlignHCenter }
+                        Button { text: "▸"; implicitWidth: 34; ToolTip.visible: hovered; ToolTip.text: "Start half a second later"
+                                 onClicked: core.invoke("updateShot", {index: index, start: modelData.start + 0.5}) }
+                        Button { text: "−"; implicitWidth: 34; ToolTip.visible: hovered; ToolTip.text: "Half a second shorter"
+                                 onClicked: core.invoke("updateShot", {index: index, duration: Math.max(0.5, modelData.duration - 0.5)}) }
+                        Label { text: modelData.duration.toFixed(1) + " s"; Layout.preferredWidth: 50; horizontalAlignment: Text.AlignHCenter }
+                        Button { text: "+"; implicitWidth: 34; ToolTip.visible: hovered; ToolTip.text: "Half a second longer"
+                                 onClicked: core.invoke("updateShot", {index: index, duration: modelData.duration + 0.5}) }
+                        Label { text: modelData.label; Layout.fillWidth: true; Layout.minimumWidth: 90; elide: Text.ElideRight; leftPadding: 6 }
+                        Button { text: "Go"; implicitWidth: 52; onClicked: core.invoke("seek", {time: modelData.start}) }
+                        Button { text: "Retake"; implicitWidth: 76; ToolTip.visible: hovered; ToolTip.text: "Give this shot the camera you have set up now"
+                                 onClicked: core.invoke("updateShot", {index: index, useCurrentRig: true}) }
+                        Button { text: "✕"; implicitWidth: 34; ToolTip.visible: hovered; ToolTip.text: "Delete this shot"; onClicked: core.invoke("deleteShot", {index: index}) }
                     }
                     Label { anchors.centerIn: parent; visible: parent.count === 0; color: theme.muted; text: "Set up a camera, then \"Add this camera\" - one shot at a time, in film order." }
+                }
+                RowLayout {
+                    Button { text: "Save the shots…"; enabled: (st.shots || []).length > 0; onClicked: planSave.open() }
+                    Button { text: "Load shots…"; onClicked: planLoad.open() }
+                    Item { Layout.fillWidth: true }
+                    Button { text: "Clear all"; enabled: (st.shots || []).length > 0; onClicked: core.invoke("clearShots") }
                 }
             }
         }

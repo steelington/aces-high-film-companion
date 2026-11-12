@@ -32,9 +32,11 @@ other windows and minimise together. Turn it off to place the viewer yourself.
   settles on the exact moment. The marks above it:
   - **red** - your kills (grey: other pilots' kill messages the film holds);
   - **amber** - your hits on another aircraft;
+  - **green** - your bombs, rockets and torpedoes being dropped (where to start **Ride his bomb**);
   - **blue** - landings.
 
-  Point at a mark to see what it is, click it to jump to a few seconds before. Some films (squad nights, events)
+  Point at a mark to see what it is, click it to jump to a few seconds before. Your shots show as **olive bars** just
+  under the marks: click one to go to it. Some films (squad nights, events)
   have no kill messages; then your hits show where the fights were, and the count says so.
 
 ## The camera
@@ -80,10 +82,21 @@ A film is a list of shots, each a camera from one moment to the next.
 
 ![Three shots: outside behind, the cockpit, then outside from the right](img/shots.png)
 
-Each shot in the list has **Go** (jump to it), **Use this camera** (replace its camera with the live one - set up
-something better, then press it) and **✕** (delete). The switch beside **Add** flips between **Showing the live
-camera** (what you're setting up) and **Playing the shots** (press Play to watch your cut). Between and after your
-shots the viewer shows the cockpit as you flew it.
+Each shot in the list has:
+
+| Control | What it does |
+|---|---|
+| ◂ ▸ | Start the shot half a second earlier or later. |
+| − + | Make it half a second shorter or longer. |
+| Go | Jump to the shot's start. |
+| Retake | Give the shot the camera you have set up now - set up something better, then press it. |
+| ✕ | Delete the shot. |
+
+The switch beside **Add** flips between **Showing the live camera** (what you're setting up) and **Playing the shots**
+(press Play to watch your cut). Between and after your shots the viewer shows the cockpit as you flew it.
+
+**Save the shots…** keeps the list in a file (`.shots.json`) to come back to later or share; **Load shots…** brings one
+back; **Clear all** empties the list.
 
 ## Render
 
