@@ -15,8 +15,10 @@ in the game or the viewer.
 ## Starting
 
 1. Run `film_companion.exe`.
-2. If the film viewer isn't running, the top line says so (amber). Type or paste where the viewer is - for example
-   `C:\...\Aces High III\ah32\ahfilmai.exe` - and press **Start it**. The companion remembers it for next time.
+2. If the film viewer isn't running, the top line says so (amber). The first time, the companion looks for the viewer
+   in the usual places Aces High is installed and fills in where it is. If it can't find it, press **Browse…** and pick
+   `ahfilmai.exe` (or `ahfilm.exe`) in your `Aces High III\ah32` folder. Press **Start it**. It remembers it for next
+   time.
 3. When the top line turns green - **Connected to the film viewer** - you're ready.
 
 **Keep the viewer beside me** (top right, on by default) parks the viewer's window against the companion's left
@@ -35,8 +37,9 @@ other windows and minimise together. Turn it off to place the viewer yourself.
   - **green** - your bombs, rockets and torpedoes being dropped (where to start **Ride his bomb**);
   - **blue** - landings.
 
-  Point at a mark to see what it is, click it to jump to a few seconds before. Your shots show as **olive bars** just
-  under the marks: click one to go to it. Some films (squad nights, events)
+  Point at a mark to see what it is. Click one of **your kills or hits** for a choice: **Go to a few seconds before**,
+  or **Add a kill sequence (3 shots)** (see Shots). Click any other mark to jump to a few seconds before. Your shots
+  show as **olive bars** just under the marks: click one to go to it. Some films (squad nights, events)
   have no kill messages; then your hits show where the fights were, and the count says so.
 
 ## The camera
@@ -82,6 +85,11 @@ A film is a list of shots, each a camera from one moment to the next.
 
 ![Three shots: outside behind, the cockpit, then outside from the right](img/shots.png)
 
+**A kill sequence in one click:** click one of your kills (red) on the timeline and choose **Add a kill sequence**. It
+lays the shots a kill usually wants: an outside camera behind you as you close in, your cockpit for the shooting, a
+padlock from your wing on the victim as he goes down, then an outside camera on you flying away. On a run of hits
+(amber) it lays the first three. Then change any of them as you like - nudge, lengthen, Retake or delete.
+
 Each shot in the list has:
 
 | Control | What it does |
@@ -104,7 +112,7 @@ back; **Clear all** empties the list.
 2. Type where the video should go, or leave it empty: it goes in `Videos\AcesHighFilms`, named after the film and
    the time. The path can't contain spaces (the viewer's rule).
 3. **Render the shots.** The viewer makes the `.mp4` with the film's sound, from your first shot to the end of your
-   last. It takes a little longer than the clip plays.
+   last. It takes a little longer than the clip plays; the button counts the time while it works.
 
 ## Things to know
 
