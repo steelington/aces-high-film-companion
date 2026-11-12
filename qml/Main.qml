@@ -43,8 +43,8 @@ ApplicationWindow {
 
     readonly property var st: core.state
     readonly property var marks: st.marks || []
-    readonly property int myKills: marks.filter(m => m.kind === "kill" && m.killer === st.me).length
-    readonly property int myHits: marks.filter(m => m.kind === "impact" && m.shooter === st.me).length
+    readonly property int myKills: marks.filter(m => m.kind === "kill" && m.mine).length
+    readonly property int myHits: marks.filter(m => m.kind === "impact").length
     property string status: ""
     property bool dragging: false
     property var films: []
@@ -57,10 +57,38 @@ ApplicationWindow {
     Connections {
         target: core
         function onMessage(text) { win.status = text }
-        function onAnswered(tag, result, error) { if (tag === "films" && !error) win.films = result.films }
+        function onAnswered(tag, result, error) {
+            if (tag === "films" && !error) win.films = result.films
+            if (tag === "findViewer" && !error && result.found.length && !viewerPath.text) viewerPath.text = result.found[0]
+        }
         function onChanged() { if (st.connected && win.films.length === 0 && !filmsAsked.running) { filmsAsked.start(); core.invoke("films", {}, "films") } }
     }
     Timer { id: filmsAsked; interval: 5000 }
+
+    // Your kill or run of hits on the timeline: go there, or lay three shots round it in one go.
+    Menu {
+        id: markMenu
+        property var mark: ({})
+        MenuItem { text: "Go to a few seconds before"; onTriggered: core.invoke("seek", {time: Math.max(0, markMenu.mark.t - 6)}) }
+        MenuItem {
+            text: "Add a kill sequence (3 shots)"
+            onTriggered: core.invoke("killShots", {t: markMenu.mark.t, kind: markMenu.mark.kind,
+                                                   victim: markMenu.mark.kind === "kill" ? markMenu.mark.victim : markMenu.mark.target})
+        }
+    }
+
+    // Where the viewer is: found in the usual install folders on first run, or chosen with Browse.
+    Component.onCompleted: if (!st.viewerPath) core.invoke("findViewer", {}, "findViewer")
+    FileDialog {
+        id: viewerDialog; title: "Find the film viewer (ahfilmai.exe or ahfilm.exe in Aces High III\\ah32)"
+        nameFilters: ["The film viewer (ahfilmai.exe ahfilm.exe)", "Programs (*.exe)"]
+        onAccepted: viewerPath.text = localPath(selectedFile)
+    }
+
+    // How long the render has been going (it takes longer than the clip plays).
+    property int renderSeconds: 0
+    Timer { interval: 1000; repeat: true; running: st.rendering; onTriggered: win.renderSeconds++ }
+    Connections { target: core; function onChanged() { if (!st.rendering) win.renderSeconds = 0 } }
 
     // A shot list saved beside the film (plain JSON: its shots and their cameras), to come back to or share.
     function localPath(url) { return decodeURIComponent(url.toString().replace(/^file:\/\/\//, "")).replace(/\//g, "\\") }
@@ -93,7 +121,8 @@ ApplicationWindow {
         RowLayout {
             Layout.fillWidth: true; visible: !st.connected
             TextField { id: viewerPath; Layout.fillWidth: true; text: st.viewerPath; placeholderText: "…\\Aces High III\\ah32\\ahfilmai.exe" }
-            Button { text: "Start it"; onClicked: core.invoke("startViewer", {path: viewerPath.text}) }
+            Button { text: "Browse…"; onClicked: viewerDialog.open() }
+            Button { text: "Start it"; enabled: viewerPath.text !== ""; onClicked: core.invoke("startViewer", {path: viewerPath.text}) }
         }
         Label { visible: st.waiting !== ""; text: "The film viewer is asking you something - look at its window: " + st.waiting; wrapMode: Text.Wrap; color: theme.red; Layout.fillWidth: true }
 
@@ -135,14 +164,21 @@ ApplicationWindow {
                     Repeater {
                         model: win.marks
                         Rectangle {
-                            readonly property bool mine: modelData.killer === st.me || modelData.shooter === st.me || (modelData.kind === "drop" && modelData.who === st.me)
+                            readonly property bool mine: modelData.mine === true
                             visible: modelData.kind === "kill" || mine || modelData.kind === "land"
                             x: st.length > 0 ? (modelData.t / st.length) * (parent.width - 2) : 0; y: 0
                             width: modelData.kind === "kill" ? 3 : 2; height: modelData.kind === "kill" ? 14 : 8
                             color: modelData.kind === "kill" ? (mine ? theme.red : theme.muted) : modelData.kind === "impact" ? theme.amber
                                  : modelData.kind === "drop" ? theme.green : theme.blue
                             ToolTip.visible: ma.containsMouse; ToolTip.text: clock(modelData.t) + "  " + modelData.text
-                            MouseArea { id: ma; anchors.fill: parent; anchors.margins: -3; hoverEnabled: true; onClicked: core.invoke("seek", {time: Math.max(0, modelData.t - 6)}) }
+                            MouseArea {
+                                id: ma; anchors.fill: parent; anchors.margins: -3; hoverEnabled: true
+                                onClicked: {
+                                    const kill = modelData.kind === "kill" && modelData.mine, hits = modelData.kind === "impact"
+                                    if (kill || hits) { markMenu.mark = modelData; markMenu.popup() }
+                                    else core.invoke("seek", {time: Math.max(0, modelData.t - 6)})
+                                }
+                            }
                         }
                     }
                     Slider {
@@ -265,7 +301,7 @@ ApplicationWindow {
                 }
                 RowLayout {
                     Button {
-                        text: st.rendering ? "Rendering…" : "Render the shots"; enabled: !st.rendering && (st.shots || []).length > 0
+                        text: st.rendering ? "Rendering… " + Math.floor(win.renderSeconds / 60) + ":" + String(win.renderSeconds % 60).padStart(2, "0") : "Render the shots"; enabled: !st.rendering && (st.shots || []).length > 0
                         onClicked: { const wh = size.currentText.split("x"); core.invoke("render", {path: outPath.text, width: +wh[0], height: +wh[1], fps: +fps.currentText}) }
                     }
                     Label { text: st.lastRender ? "Last: " + st.lastRender : ""; elide: Text.ElideLeft; Layout.fillWidth: true }

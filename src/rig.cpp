@@ -59,19 +59,23 @@ QString Rig::camLine(double start, double duration, int me, const Pose &mePose) 
     double right, up, ahead, yaw, pitch;
     offsets(right, up, ahead, yaw, pitch);
     const QString place = QString("%1 %2 %3 %4 %5 %6 %7").arg(n(right, 2), n(up, 2), n(ahead, 2), n(yaw), n(pitch), n(rollR), n(fov));
+    // The filmer is always "me" (the viewer's own word for him), so cameras work even before his id is known (he can
+    // sit in the tower at the start of a film, where `planes` doesn't mark him).
+    Q_UNUSED(me);
+    const QString who = QStringLiteral("me");
     if (kind == "cockpit") return head + "recorded";
-    if (kind == "seat") return head + QString("mount %1 0 0 0 0 0 %2 %3").arg(me).arg(n(rollR), n(fov));
-    if (kind == "weapon") return head + QString("weapon %1").arg(me);
-    if (kind == "chase") return head + QString("chase %1 %2").arg(me).arg(place);
+    if (kind == "seat") return head + QString("mount %1 0 0 0 0 0 %2 %3").arg(who, n(rollR), n(fov));
+    if (kind == "weapon") return head + QString("weapon %1").arg(who);
+    if (kind == "chase") return head + QString("chase %1 %2").arg(who, place);
     if (kind == "padlock") {
         if (target < 0) return {};
-        return head + QString("mount %1 %2 at %3 outside").arg(me).arg(place).arg(target);
+        return head + QString("mount %1 %2 at %3 outside").arg(who, place).arg(target);
     }
     if (kind == "hung") {
         if (!hung) return {};
         const double dx = mePose.x - hungX, dy = mePose.alt - hungAlt, dz = mePose.z - hungZ;
         const double y = std::atan2(-dx, dz), p = std::atan2(dy, std::hypot(dx, dz));
-        return head + QString("fixed %1 %2 %3 %4 %5 %6 %7 at %8").arg(n(hungX, 1), n(hungAlt, 1), n(hungZ, 1), n(y), n(p), n(rollR), n(fov)).arg(me);
+        return head + QString("fixed %1 %2 %3 %4 %5 %6 %7 at %8").arg(n(hungX, 1), n(hungAlt, 1), n(hungZ, 1), n(y), n(p), n(rollR), n(fov)).arg(who);
     }
-    return head + QString("mount %1 %2 outside").arg(me).arg(place);   // orbit
+    return head + QString("mount %1 %2 outside").arg(who, place);   // orbit
 }

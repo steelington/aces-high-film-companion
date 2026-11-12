@@ -8,6 +8,8 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QHash>
+#include <QSet>
+#include <memory>
 
 namespace {
 QString n(double v, int dp = 3) { return QString::number(v, 'f', dp); }
@@ -30,7 +32,8 @@ Core::Core(QObject *parent) : QObject(parent) {
 
 QStringList Core::methods() const {
     return {"status", "startViewer", "films", "open", "play", "pause", "seek", "planes", "setRig", "hangHere", "preview",
-            "addShot", "updateShot", "deleteShot", "clearShots", "savePlan", "loadPlan", "saveCams", "render", "still"};
+            "addShot", "updateShot", "deleteShot", "clearShots", "killShots", "savePlan", "loadPlan", "saveCams", "render", "still",
+            "findViewer"};
 }
 
 QJsonObject Core::state() const {
@@ -107,13 +110,26 @@ void Core::readPlanes(std::function<void()> then) {
 }
 
 void Core::loadMarks() {
-    // The timeline's marks: kills (the arena's kill messages the recorder got), landings, his drops, his hits on
-    // others, and hits he took - read from the film without playing it.
-    m_link.send("events kill,land,drop,impact,hit", [this](const QStringList &l, bool err) {
+    // The timeline's marks: kills (the arena's kill messages the recorder got), landings, drops, his hits on others,
+    // and hits he took - read from the film without playing it. Which are HIS comes from the film itself, so it's
+    // known even while he sits in the tower: his kills from `events kill killer filmer` (with his aircraft id), every
+    // impact (the film holds only his rounds hitting), and a drop whose country is "-" (his own).
+    auto myKills = std::make_shared<QSet<QString>>();
+    m_link.send("events kill killer filmer", [this, myKills](const QStringList &l, bool err) {
+        if (err) return;
+        static const QRegularExpression kill(R"re(^event ([\d.]+) kill "[^"]*" "[^"]*" \S+ (\S+) (\S+))re");
+        for (const QString &line : l) {
+            const auto m = kill.match(line);
+            if (!m.hasMatch()) continue;
+            myKills->insert(m.captured(1) + "|" + m.captured(3));
+            if (m_me < 0 && m.captured(2) != "-") m_me = m.captured(2).toInt();
+        }
+    }, 300000);
+    m_link.send("events kill,land,drop,impact,hit", [this, myKills](const QStringList &l, bool err) {
         if (err) return;
         static const QRegularExpression kill(R"re(^event ([\d.]+) kill "([^"]*)" "([^"]*)" (\S+) (\S+) (\S+))re");
         static const QRegularExpression land(R"re(^event ([\d.]+) land "([^"]*)" "([^"]*)")re");
-        static const QRegularExpression drop(R"re(^event ([\d.]+) drop (\S+) (\S+) "([^"]*)")re");
+        static const QRegularExpression drop(R"re(^event ([\d.]+) drop (\S+) (\S+) "([^"]*)" (\S+))re");
         static const QRegularExpression impact(R"re(^event ([\d.]+) impact (\S+) (\S+) "([^"]*)" (\d+))re");
         static const QRegularExpression hit(R"re(^event ([\d.]+) hit (\S+) (\d+))re");
         QJsonArray a;
@@ -121,14 +137,16 @@ void Core::loadMarks() {
             QRegularExpressionMatch m;
             if ((m = kill.match(line)).hasMatch())
                 a.append(QJsonObject{{"t", m.captured(1).toDouble()}, {"kind", "kill"}, {"text", m.captured(2) + " shot down " + m.captured(3)},
-                                     {"killer", m.captured(5).toInt()}, {"victim", m.captured(6).toInt()}, {"killerName", m.captured(2)}, {"victimName", m.captured(3)}});
+                                     {"killer", m.captured(5).toInt()}, {"victim", m.captured(6).toInt()}, {"killerName", m.captured(2)}, {"victimName", m.captured(3)},
+                                     {"mine", myKills->contains(m.captured(1) + "|" + m.captured(6))}});
             else if ((m = land.match(line)).hasMatch())
                 a.append(QJsonObject{{"t", m.captured(1).toDouble()}, {"kind", "land"}, {"text", m.captured(2) + ": " + m.captured(3)}});
             else if ((m = drop.match(line)).hasMatch())
-                a.append(QJsonObject{{"t", m.captured(1).toDouble()}, {"kind", "drop"}, {"text", m.captured(3) + " " + m.captured(4)}, {"who", m.captured(2).toInt()}});
+                a.append(QJsonObject{{"t", m.captured(1).toDouble()}, {"kind", "drop"}, {"text", m.captured(3) + " " + m.captured(4)}, {"who", m.captured(2).toInt()},
+                                     {"mine", m.captured(5) == "-"}});
             else if ((m = impact.match(line)).hasMatch())
                 a.append(QJsonObject{{"t", m.captured(1).toDouble()}, {"kind", "impact"}, {"text", m.captured(5) + " hits with " + m.captured(4)},
-                                     {"shooter", m.captured(2).toInt()}, {"target", m.captured(3).toInt()}});
+                                     {"shooter", m.captured(2).toInt()}, {"target", m.captured(3).toInt()}, {"mine", true}});
             else if ((m = hit.match(line)).hasMatch())
                 a.append(QJsonObject{{"t", m.captured(1).toDouble()}, {"kind", "hit"}, {"text", m.captured(3) + " hits taken"}});
         }
@@ -160,11 +178,38 @@ void Core::call(const QString &method, const QJsonObject &p, Done done) {
     auto ok = [done](const QJsonObject &r = {}) { if (done) done(r, {}); };
     auto fail = [done](const QString &e) { if (done) done({}, e); };
     const bool needFilm = !QStringList{"status", "startViewer", "films", "open", "setRig", "addShot", "updateShot", "deleteShot",
-                                       "clearShots", "loadPlan", "savePlan", "preview"}.contains(method);
+                                       "clearShots", "loadPlan", "savePlan", "preview", "findViewer"}.contains(method);
     if (needFilm && m_film.isEmpty()) { fail("open a film first"); return; }
-    if (method != "status" && method != "startViewer" && !m_link.connected()) { fail("the film viewer isn't connected: start it first"); return; }
+    if (method != "status" && method != "startViewer" && method != "findViewer" && !m_link.connected()) { fail("the film viewer isn't connected: start it first"); return; }
 
     if (method == "status") { ok(state()); return; }
+    if (method == "findViewer") {
+        // The usual places Aces High is installed, on every drive; the AI-socket viewer first, then the release name.
+        QJsonArray found;
+        const QStringList folders{"Program Files (x86)/HiTech Creations/Aces High III/ah32", "Program Files/HiTech Creations/Aces High III/ah32",
+                                  "HiTech Creations/Aces High III/ah32", "Games/Aces High III/ah32", "Games/AHIII/Aces High III/ah32",
+                                  "Aces High III/ah32"};
+        for (char d = 'C'; d <= 'H'; ++d)
+            for (const QString &f : folders)
+                for (const QString &exe : {QStringLiteral("ahfilmai.exe"), QStringLiteral("ahfilm.exe")}) {
+                    const QString path = QDir::toNativeSeparators(QString("%1:/%2/%3").arg(d).arg(f, exe));
+                    if (QFileInfo::exists(path)) found.append(path);
+                }
+        // Then one level deeper: <drive>:\Games\<anything>\Aces High III\ah32 and <drive>:\<anything>\Aces High III\ah32.
+        for (char d = 'C'; d <= 'H'; ++d)
+            for (const QString &root : {QString("%1:/Games").arg(d), QString("%1:/").arg(d)})
+                for (const QString &sub : QDir(root).entryList(QDir::Dirs | QDir::NoDotAndDotDot))
+                    for (const QString &exe : {QStringLiteral("ahfilmai.exe"), QStringLiteral("ahfilm.exe")}) {
+                        const QString path = QDir::toNativeSeparators(QDir(root).filePath(sub + "/Aces High III/ah32/" + exe));
+                        if (QFileInfo::exists(path) && !found.contains(path)) found.append(path);
+                    }
+        // The AI-socket viewer first, wherever it was found.
+        QJsonArray sorted;
+        for (const QJsonValue &v : found) if (v.toString().endsWith("ahfilmai.exe", Qt::CaseInsensitive)) sorted.append(v);
+        for (const QJsonValue &v : found) if (!v.toString().endsWith("ahfilmai.exe", Qt::CaseInsensitive)) sorted.append(v);
+        ok({{"found", sorted}});
+        return;
+    }
     if (method == "startViewer") {
         const QString path = p["path"].toString(m_viewerPath);
         if (!QFileInfo::exists(path)) { fail("no film viewer at " + path); return; }
@@ -260,6 +305,35 @@ void Core::call(const QString &method, const QJsonObject &p, Done done) {
             if (p.contains("rig")) s.rig = Rig::fromJson(p["rig"].toObject());
             if (p["useCurrentRig"].toBool()) s.rig = m_rig;
             std::sort(m_shots.begin(), m_shots.end(), [](const Shot &a, const Shot &b) { return a.start < b.start; });
+        }
+        if (!m_preview) applyCameras();
+        emit changed(); ok(shotsJson());
+        return;
+    }
+    if (method == "killShots") {
+        // Shots round a kill, the shape that tends to work: an outside camera behind and above as he closes in, his
+        // cockpit for the shooting, a padlock from his right wing on the victim - and, for a kill, a camera behind and
+        // high on him flying away. `t` is the kill message (kind "kill": the fatal hits come a few seconds before it)
+        // or a run of hits (kind "impact"). The victim leaves the film AT the kill message, and a padlock with nothing
+        // to follow falls back on its own angles (his own aircraft, close up), so it ends there.
+        // The cockpit is the eye-point kind: the recorded view after an outside shot draws wrong in the current viewer.
+        const double t = p["t"].toDouble();
+        const int victim = p["victim"].toInt(-1);
+        const bool kill = p["kind"].toString("kill") == "kill";
+        const double burst = kill ? t - 3.0 : t;   // when the shooting is, near enough
+        Rig behind; behind.kind = "orbit"; behind.angle = 0; behind.height = 15; behind.distance = 120; behind.zoom = 50;
+        Rig cockpit; cockpit.kind = "seat"; cockpit.zoom = 70;
+        Rig padlock; padlock.kind = "padlock"; padlock.angle = 75; padlock.height = 7; padlock.distance = 24; padlock.zoom = 50;
+        padlock.target = victim;
+        Rig away; away.kind = "orbit"; away.angle = 160; away.height = 25; away.distance = 160; away.zoom = 55;
+        const double a = std::max(0.0, burst - 5.0), b = std::max(a + 1.0, burst - 1.0), c = burst + 1.5;
+        const double padEnd = kill ? std::max(c + 1.0, t + 0.2) : burst + 4.5;
+        QList<Shot> add{Shot{a, b - a, "Outside, behind", behind}, Shot{b, c - b, "Cockpit, looking ahead", cockpit}};
+        if (victim >= 0) add << Shot{c, padEnd - c, "Padlock on the victim", padlock};
+        if (kill) add << Shot{victim >= 0 ? padEnd : c, 2.5, "Outside, flying away", away};
+        for (const Shot &s : add) {
+            int at = 0; while (at < m_shots.size() && m_shots[at].start <= s.start) ++at;
+            m_shots.insert(at, s);
         }
         if (!m_preview) applyCameras();
         emit changed(); ok(shotsJson());
