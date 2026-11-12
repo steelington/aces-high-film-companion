@@ -12,6 +12,9 @@ The one list. Update it with every change; the manual (MANUAL.md) changes with e
 - [x] Packaging: a zip of build/dist named with the version, for the release page (package.sh, 12 Nov 2026: build/aces-high-film-companion-<ver>-win64.zip + .sha256; version from CMakeLists project()).
 
 ## Waiting on others
+- [ ] **Release (0.1.0):** Steely asked HiTech by PM on 13 Nov 2026 whether it may go up as a free download (hitech repo
+      correspondence/2026-11-13-to-hitech-pm-companion-release.txt). Ready: zip built, end-to-end test passes on the
+      released Patch 2 viewer (ahfilm.exe, 13 Nov). On a yes: GitHub repo public, release with the zip.
 - [ ] **Tablet page:** off unless started with `--tablet`, until HiTech gives his view (hitech repo direct/NEXT.md).
 
 ## Done
