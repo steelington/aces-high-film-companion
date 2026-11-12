@@ -316,19 +316,20 @@ void Core::call(const QString &method, const QJsonObject &p, Done done) {
         // high on him flying away. `t` is the kill message (kind "kill": the fatal hits come a few seconds before it)
         // or a run of hits (kind "impact"). The victim leaves the film AT the kill message, and a padlock with nothing
         // to follow falls back on its own angles (his own aircraft, close up), so it ends there.
-        // The cockpit is the eye-point kind: the recorded view after an outside shot draws wrong in the current viewer.
+        // The cockpit is the recorded view - his own, as he flew it (fixed in build 9: after an outside shot it used to
+        // draw the outside model's cockpit, AHF-30).
         const double t = p["t"].toDouble();
         const int victim = p["victim"].toInt(-1);
         const bool kill = p["kind"].toString("kill") == "kill";
         const double burst = kill ? t - 3.0 : t;   // when the shooting is, near enough
         Rig behind; behind.kind = "orbit"; behind.angle = 0; behind.height = 15; behind.distance = 120; behind.zoom = 50;
-        Rig cockpit; cockpit.kind = "seat"; cockpit.zoom = 70;
+        Rig cockpit; cockpit.kind = "cockpit"; cockpit.zoom = 70;
         Rig padlock; padlock.kind = "padlock"; padlock.angle = 75; padlock.height = 7; padlock.distance = 24; padlock.zoom = 50;
         padlock.target = victim;
         Rig away; away.kind = "orbit"; away.angle = 160; away.height = 25; away.distance = 160; away.zoom = 55;
         const double a = std::max(0.0, burst - 5.0), b = std::max(a + 1.0, burst - 1.0), c = burst + 1.5;
         const double padEnd = kill ? std::max(c + 1.0, t + 0.2) : burst + 4.5;
-        QList<Shot> add{Shot{a, b - a, "Outside, behind", behind}, Shot{b, c - b, "Cockpit, looking ahead", cockpit}};
+        QList<Shot> add{Shot{a, b - a, "Outside, behind", behind}, Shot{b, c - b, "Cockpit", cockpit}};
         if (victim >= 0) add << Shot{c, padEnd - c, "Padlock on the victim", padlock};
         if (kill) add << Shot{victim >= 0 ? padEnd : c, 2.5, "Outside, flying away", away};
         for (const Shot &s : add) {

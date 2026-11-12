@@ -86,7 +86,8 @@ A film is a list of shots, each a camera from one moment to the next.
 ![Three shots: outside behind, the cockpit, then outside from the right](img/shots.png)
 
 **A kill sequence in one click:** click one of your kills (red) on the timeline and choose **Add a kill sequence**. It
-lays the shots a kill usually wants: an outside camera behind you as you close in, your cockpit for the shooting, a
+lays the shots a kill usually wants: an outside camera behind you as you close in, your cockpit as you flew it for the
+shooting, a
 padlock from your wing on the victim as he goes down, then an outside camera on you flying away. On a run of hits
 (amber) it lays the first three. Then change any of them as you like - nudge, lengthen, Retake or delete.
 
@@ -116,10 +117,6 @@ back; **Clear all** empties the list.
 
 ## Things to know
 
-- **Cockpit after an outside shot:** in the current viewer, when the video cuts from an outside shot straight to the
-  Cockpit kind, the cockpit can draw wrong (the pilot's goggles where the gunsight should be). Use **Cockpit, looking
-  ahead** after an outside shot for now. This is a viewer issue that has been reported.
-- **A slight shimmer** can show in exported video on cameras fixed to an aircraft. Also reported.
 - **Other aircraft move in small steps** in a film, the far ones more so: cameras look best placed round your own
   aircraft. A padlock frames others from your aircraft, which works well.
 - **Just after a respawn** the ground near you can draw wrong for a few seconds. Start shots a few seconds later.

@@ -13,12 +13,10 @@ The one list. Update it with every change; the manual (MANUAL.md) changes with e
 
 ## Waiting on others
 - [ ] **Tablet page:** off unless started with `--tablet`, until HiTech gives his view (hitech repo direct/NEXT.md).
-- [ ] **AHF-30** (viewer): the recorded cockpit draws wrong straight after an outside shot. The kill sequence uses the
-      eye-point cockpit ("Cockpit, looking ahead") until it's fixed - change it back to the recorded view then, and take
-      the note out of the manual.
-- [ ] **AHF-28** (viewer): a slight shimmer on cameras fixed to an aircraft in exported video (noted in the manual).
 
 ## Done
 - [x] v1: viewer link, camera rig and sliders, live preview, shots, render; docking; studio look and icon; packaging;
       manual (MD + HTML with pictures); film picker; default output folder; shot timing; timeline shot bars and drops;
       save/load/clear shots; kill sequence; finding the viewer; render timer (12 Nov 2026).
+- [x] Build 9 (12 Nov 2026): AHF-30 fixed, so the kill sequence uses the recorded cockpit again and the manual's note is
+      gone; AHF-28 fixed (the shimmer note gone).
