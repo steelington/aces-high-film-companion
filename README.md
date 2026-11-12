@@ -55,3 +55,7 @@ Qt 6.5+ (Core, Gui, Network, Qml, Quick) and CMake:
 `tools/package.sh` makes the release zip. **Keeping the docs current:** every change to a control, kind, slider or
 behaviour updates docs/MANUAL.md (and its pictures, made with `--grab` / `tools/manual_shots.py`) in the same
 commit; the README's pictures come from `tools/readme_shots.py`.
+
+## Licence
+
+MIT - free to use, share and change; see [LICENSE](LICENSE).
