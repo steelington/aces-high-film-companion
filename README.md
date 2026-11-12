@@ -35,8 +35,8 @@ lens and roll. The viewer's picture follows as you drag.
 **3. Add your shots.** When the picture looks right, press **Add this camera** - it adds a shot from that moment for
 the number of seconds beside it. Move along the film and add the next. Shots show as bars on the timeline; nudge
 their start and length, **Go** to look at one again, **Retake** it with the current camera, or delete it. **Save
-the shots…** keeps the list to carry on later. Click one of your kills on the timeline for a whole kill sequence in
-one go.
+the shots…** keeps the list to carry on later. Click one of your kills (red) on the timeline and choose **Add a kill
+sequence** for three shots of it in one go.
 
 ![Three shots lined up: outside behind, the cockpit, then outside from the right](docs/img/howto_3_shots.png)
 
