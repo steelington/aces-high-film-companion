@@ -11,6 +11,9 @@ set(CMAKE_AUTOMOC ON)
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Network Qml Quick QuickControls2)
 qt_standard_project_setup(REQUIRES 6.5)
 
+# The exe's icon and version details (Windows resource), with the version from project() above.
+configure_file(app.rc.in ${CMAKE_CURRENT_BINARY_DIR}/app.rc @ONLY)
+
 qt_add_executable(film_companion WIN32
     src/main.cpp
     src/viewer_link.cpp src/viewer_link.h
@@ -18,7 +21,7 @@ qt_add_executable(film_companion WIN32
     src/core.cpp src/core.h
     src/http_api.cpp src/http_api.h
     src/dock.cpp src/dock.h
-    app_icon.rc
+    ${CMAKE_CURRENT_BINARY_DIR}/app.rc
 )
 qt_add_qml_module(film_companion
     URI Companion

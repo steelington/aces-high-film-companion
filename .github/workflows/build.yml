@@ -1,0 +1,66 @@
+# Build the companion from this repository's source on a clean Windows machine and package the release zip, so
+# every published exe can be traced to a commit. The packaged folder and the zip are kept as the run's artifacts
+# (unsigned); code signing, once set up, signs these artifacts and nothing built elsewhere.
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Qt 6.8.3 (MSVC 2022, 64-bit)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          arch: win64_msvc2022_64
+          cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Manual builder's one package
+        run: python -m pip install markdown==3.7
+
+      - name: Configure and build (Release)
+        shell: bash
+        run: |
+          cmake -S . -B build -A x64 -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR"
+          cmake --build build --config Release
+
+      - name: Package (exe, Qt parts, C++ runtime, README, manual) and zip
+        shell: bash
+        run: QT="$(cygpath -u "$QT_ROOT_DIR")" bash tools/package.sh
+
+      - name: The exe's version matches CMakeLists.txt
+        shell: pwsh
+        run: |
+          $want = (Select-String -Path CMakeLists.txt -Pattern 'project\(aces_high_film_companion VERSION ([0-9.]+)').Matches[0].Groups[1].Value
+          $got = (Get-Item build/dist/film_companion.exe).VersionInfo.ProductVersion
+          if ($got -ne $want) { throw "exe says $got, CMakeLists.txt says $want" }
+          "film_companion.exe $got"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: film-companion-unsigned
+          path: build/dist/
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-zip-unsigned
+          path: |
+            build/aces-high-film-companion-*-win64.zip
+            build/aces-high-film-companion-*-win64.zip.sha256
+          if-no-files-found: error

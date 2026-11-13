@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
     QGuiApplication::setOrganizationName("AcesHighFilmCompanion");
     QGuiApplication::setApplicationName("Aces High film companion");
-    QQuickStyle::setStyle("Basic");   // the stock controls take the studio's dark palette (Main.qml)
+    QQuickStyle::setStyle("Basic");   // the stock controls take the companion's dark palette (Main.qml)
     Core core;
     // The tablet page (a server on the home network) is off unless started with --tablet: waiting on HiTech's view
     // before it ships switched on (Steely, 12 Nov 2026). Not in the manual while it's off.

@@ -4,7 +4,7 @@ scene. Retake them whenever the window changes (the manual stays current).
 
     python -I tools/manual_shots.py --viewer <ahfilmai.exe> --film <film.ahf> [--time 61] [--qt <Qt>/msvc2022_64]
 
-The Release build needs Qt's DLLs: --qt (default: the Qt this PC builds with) puts its bin on the PATH.
+The Release build needs Qt's DLLs: --qt (or the QT environment variable) puts its bin on the PATH.
 """
 import argparse, json, os, subprocess, sys, time, urllib.request
 
@@ -57,7 +57,7 @@ def scene(name, setup, a):
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--viewer", required=True); ap.add_argument("--film", required=True)
     ap.add_argument("--time", type=float, default=61.0)
-    ap.add_argument("--qt", default=r"D:\DEV\aces_investigation\ah_film_studio\codex\.tooling\Qt\6.8.3\msvc2022_64")
+    ap.add_argument("--qt", default=os.environ.get("QT"), required=not os.environ.get("QT"), help="Qt msvc2022_64 folder (or set QT)")
     a = ap.parse_args()
     os.makedirs(IMG, exist_ok=True)
     scene("window", lambda: call("setRig", rig=dict(kind="orbit", angle=0, height=12, distance=90, zoom=60)), a)

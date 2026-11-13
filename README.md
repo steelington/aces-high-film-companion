@@ -52,9 +52,29 @@ Qt 6.5+ (Core, Gui, Network, Qml, Quick) and CMake:
     cmake -S . -B build -DCMAKE_PREFIX_PATH=<Qt>/msvc2022_64
     cmake --build build --config Release
 
-`tools/package.sh` makes the release zip. **Keeping the docs current:** every change to a control, kind, slider or
+`QT=<Qt>/msvc2022_64 bash tools/package.sh` makes the release zip (needs Python's `markdown` package and 7-Zip).
+GitHub Actions does the same on every push ([build.yml](.github/workflows/build.yml)); release exes come from there.
+The version is set once, in CMakeLists.txt's `project()` line. **Keeping the docs current:** every change to a control, kind, slider or
 behaviour updates docs/MANUAL.md (and its pictures, made with `--grab` / `tools/manual_shots.py`) in the same
 commit; the README's pictures come from `tools/readme_shots.py`.
+
+## Code signing policy
+
+Free code signing for this open-source project has been applied for with [SignPath.io](https://signpath.io), with
+the certificate from [SignPath Foundation](https://signpath.org). **Until that is in place, releases are not signed**
+and Windows may warn when you first run `film_companion.exe`.
+
+- Every release exe is built from this repository by its GitHub Actions workflow
+  ([.github/workflows/build.yml](.github/workflows/build.yml)); only those builds will be signed.
+- Committers and reviewers: [steelington](https://github.com/steelington)
+- Approvers (each signing approved by hand): [steelington](https://github.com/steelington)
+
+## Privacy
+
+The companion sends nothing anywhere. It talks only to the Aces High film viewer on your own PC (the viewer's local
+socket). The tablet page is off unless the companion is started with `--tablet`; then it is served for a tablet on
+your home network, and any request that doesn't come from the PC itself is refused without the pairing code shown
+on the PC. It has no updates check, no analytics and no other network use.
 
 ## Licence
 

@@ -1,0 +1,35 @@
+// The exe's icon and version details. CMake fills in the version from project() in CMakeLists.txt (the one place
+// it is set) and writes the result to the build folder as app.rc.
+// Qt on Windows takes IDI_ICON1 as the default icon for every window, so the title bar and taskbar show it too.
+#include <winver.h>
+
+IDI_ICON1 ICON "@CMAKE_CURRENT_SOURCE_DIR@/assets/app_icon.ico"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION     @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,0
+ PRODUCTVERSION  @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,0
+ FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+ FILEFLAGS       0
+ FILEOS          VOS_NT_WINDOWS32
+ FILETYPE        VFT_APP
+ FILESUBTYPE     VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName",      "steelington"
+            VALUE "FileDescription",  "Aces High film companion"
+            VALUE "FileVersion",      "@PROJECT_VERSION@"
+            VALUE "InternalName",     "film_companion"
+            VALUE "LegalCopyright",   "Copyright (c) 2026 steelington. MIT licence."
+            VALUE "OriginalFilename", "film_companion.exe"
+            VALUE "ProductName",      "Aces High film companion"
+            VALUE "ProductVersion",   "@PROJECT_VERSION@"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 1200
+    END
+END

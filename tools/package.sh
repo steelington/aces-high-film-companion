@@ -4,7 +4,7 @@
 #     QT=<Qt>/msvc2022_64 bash tools/package.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
-QT=${QT:-/d/DEV/aces_investigation/ah_film_studio/codex/.tooling/Qt/6.8.3/msvc2022_64}
+QT=${QT:?set QT to your Qt msvc2022_64 folder, e.g. QT=/c/Qt/6.8.3/msvc2022_64}
 VSWHERE="/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe"
 VS=$("$VSWHERE" -latest -products '*' -property installationPath | tr -d '\r\n')
 

@@ -10,7 +10,7 @@ ApplicationWindow {
     minimumWidth: 560; minimumHeight: 980
     visible: true
     title: st.film ? "Aces High film companion — " + st.film.split(/[\\\/]/).pop() : "Aces High film companion"
-    // The studio's look: dark panels, olive highlight, blue accents, red for kills.
+    // The companion's look: dark panels, olive highlight, blue accents, red for kills.
     readonly property QtObject theme: QtObject {
         readonly property color background: "#0f1419"
         readonly property color panel: "#1a1f26"
@@ -203,7 +203,7 @@ ApplicationWindow {
                                 ["padlock", "Padlock"], ["hung", "Hung here"], ["weapon", "Ride his bomb"]]
                         Button {
                             text: modelData[1]; checkable: true; checked: st.rig.kind === modelData[0]
-                            palette.dark: theme.olive; palette.brightText: theme.cream   // Basic draws a checked button in "dark": the studio's olive
+                            palette.dark: theme.olive; palette.brightText: theme.cream   // Basic draws a checked button in "dark": the companion's olive
                             onClicked: modelData[0] === "hung" ? core.invoke("hangHere") : rig({kind: modelData[0]})
                         }
                     }

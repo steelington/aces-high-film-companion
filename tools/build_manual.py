@@ -1,4 +1,4 @@
-"""Build docs/MANUAL.html from docs/MANUAL.md (the one master): the studio's colours, and every picture embedded in
+"""Build docs/MANUAL.html from docs/MANUAL.md (the one master): the companion's colours, and every picture embedded in
 the file, so the manual is a single page that opens in any browser, offline, from the download.
 
     python -I tools/build_manual.py        (needs the `markdown` package)
