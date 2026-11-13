@@ -60,9 +60,9 @@ commit; the README's pictures come from `tools/readme_shots.py`.
 
 ## Code signing policy
 
-Free code signing for this open-source project has been applied for with [SignPath.io](https://signpath.io), with
-the certificate from [SignPath Foundation](https://signpath.org). **Until that is in place, releases are not signed**
-and Windows may warn when you first run `film_companion.exe`.
+**Releases are not signed yet**, so Windows may warn when you first run `film_companion.exe`. Each release lists the
+zip's SHA-256 so you can check your download is the published one. Code signing will be added when the project
+qualifies for an open-source certificate.
 
 - Every release exe is built from this repository by its GitHub Actions workflow
   ([.github/workflows/build.yml](.github/workflows/build.yml)); only those builds will be signed.

@@ -12,8 +12,10 @@ The one list. Update it with every change; the manual (MANUAL.md) changes with e
 - [x] Packaging: a zip of build/dist named with the version, for the release page (package.sh, 12 Nov 2026: build/aces-high-film-companion-<ver>-win64.zip + .sha256; version from CMakeLists project()).
 
 ## Waiting on others
-- [ ] **Code signing (SignPath Foundation):** applied 13 Nov 2026. On acceptance: signing step in build.yml (their
-      GitHub action; API token as a repo secret), README policy wording to "in place", a signed release from CI.
+- [ ] **Code signing:** SignPath Foundation turned it down on 13 Nov 2026 - the project is too new. Releases stay
+      unsigned (with a published SHA-256). Options: reapply to SignPath once it has a track record; Certum's
+      open-source certificate (paid, ID check); Azure Artifact Signing (check individual eligibility). When one is in
+      place: signing step in build.yml (token as a repo secret), README policy wording, a signed release from CI.
 - [ ] **Announcing it:** HiTech has no issue with distribution but is deciding about an unsigned exe on his site.
 - [ ] **Tablet page:** off unless started with `--tablet`, until HiTech gives his view (hitech repo direct/NEXT.md).
 
