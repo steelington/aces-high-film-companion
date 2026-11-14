@@ -38,6 +38,7 @@ private:
     void refreshTime();
     void loadMarks();
     void readPlanes(std::function<void()> then = {});
+    void readMap();                       // the camera map: every aircraft's path round now, and buildings near him
     void applyCameras();                  // the live rig, or the shot list, into the viewer
     QJsonObject shotsJson() const;
     QString videosFolder() const;
@@ -50,6 +51,7 @@ private:
     bool m_playing = false, m_preview = true, m_rendering = false;
     int m_me = -1;
     QJsonArray m_planes, m_marks;
+    QJsonObject m_map;
     Rig m_rig;
     QList<Shot> m_shots;
     QString m_lastRender;

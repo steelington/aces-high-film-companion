@@ -56,7 +56,7 @@ sliders: the viewer's picture follows as you move them.
 | Outside | A camera riding along with your aircraft, placed round it by the sliders, always looking at it. |
 | Chase | The viewer's chase camera at that place - trailing you smoothly. |
 | Padlock | The outside camera turned to keep another aircraft in frame - pick who in **Keep in frame**. From the wing in a low fight it looks like WW2 gun-camera film. |
-| Hung here | Leaves a camera standing in the sky where the outside camera is now, turning to watch you fly past. |
+| Hung here | Leaves a camera standing in the sky where the outside camera is now, turning to watch you fly past. The **Map** tab comes up: move and turn it there (below). |
 | Ride his bomb | Rides your next bomb, rocket or torpedo from release to impact, then holds on the blast. Set it just before the drop. |
 
 ![A padlock from the wing, keeping another pilot in frame](img/padlock.png)
@@ -73,6 +73,33 @@ back, Below, and Far with a long lens.
 | Height | Above you (positive) or below (negative), in degrees. |
 | Lens (wide ↔ long) | Wide shows more around you; long zooms in. A long lens from far away compresses a chase. |
 | Roll | Tilts the picture - a little roll makes level flight look more dynamic. |
+
+## The camera map
+
+The **Map** tab in the camera box (beside **Sliders**) shows the moment from above, north up, 15 seconds either side
+of where the film is. Choosing **Hung here**, or double-clicking the map, brings it up; any other kind of camera goes
+back to the sliders.
+
+
+- **Your path** in cream (the part still to come fainter) and your aircraft in red with your name, pointing the way
+  you fly. **Everyone else's** in grey, with their names. **Buildings** near you as grey blocks (with the viewer's
+  newer versions, at their real size).
+- **The hung camera** as a blue dot, with a cone showing the lens's width and which way it looks.
+
+![The camera map: a camera hung beside his path, watching him](img/map.png)
+
+| To | Do |
+|---|---|
+| Hang a camera | Double-click the map where you want it. It goes in at your height, watching you. |
+| Move it | Drag the camera's dot. The viewer's picture follows as you drag. |
+| Turn it | Drag the small dot at the tip of its cone. It then looks where you point it (**Look where it points**), and you fly through its picture. |
+| Keep you in frame | **Watch him**: the camera turns to follow you, wherever it stands. |
+| Raise or lower it | **Height**, in feet (your own height is the starting point). |
+| Tilt it up or down | **Tilt**, with **Look where it points** chosen. |
+| Look about | Drag empty ground. **−** and **+** change the scale, **Fit** shows your whole path again, and **Follow him** keeps you in the middle as the film moves. |
+
+The map is read when the film stops (after a seek or a pause), so it doesn't slow down scrubbing. While the film
+plays, your aircraft moves along the path already drawn.
 
 ## Shots
 

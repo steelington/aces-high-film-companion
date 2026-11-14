@@ -6,7 +6,7 @@ import QtQuick.Dialogs
 // The desktop face. Every button is one core method (core.invoke), the same ones the tablet page calls.
 ApplicationWindow {
     id: win
-    width: 620; height: 1180
+    width: 620; height: 1240
     minimumWidth: 560; minimumHeight: 980
     visible: true
     title: st.film ? "Aces High film companion — " + st.film.split(/[\\\/]/).pop() : "Aces High film companion"
@@ -227,18 +227,45 @@ ApplicationWindow {
                         onActivated: rig({target: model[currentIndex].id})
                     }
                 }
-                Repeater {
-                    model: [["distance", "Distance", 20, 1500, " ft"], ["angle", "Angle round him", -180, 180, "°"], ["height", "Height", -80, 80, "°"],
-                            ["zoom", "Lens (wide ↔ long)", 5, 140, "°"], ["roll", "Roll", -45, 45, "°"]]
-                    delegate: RowLayout {
-                        Layout.fillWidth: true
-                        Label { text: modelData[1]; Layout.preferredWidth: 150 }
-                        Slider {
-                            Layout.fillWidth: true; from: modelData[2]; to: modelData[3]
-                            value: st.rig[modelData[0]]
-                            onMoved: { const c = {}; c[modelData[0]] = value; rig(c) }
+                // The sliders, or the camera map (seen from above: drag the hung camera, turn it by the dot on its
+                // cone). A hung camera brings the map up; any other kind, the sliders.
+                TabBar {
+                    id: camTabs; Layout.fillWidth: true
+                    TabButton { text: "Sliders"; palette.window: theme.olive; palette.dark: theme.alternate }   // the chosen tab olive, as checked buttons are
+                    TabButton { text: "Map"; palette.window: theme.olive; palette.dark: theme.alternate }
+                }
+                Connections {
+                    target: core
+                    property string lastKind: ""
+                    function onChanged() {
+                        const k = st.rig.kind
+                        if (k !== lastKind) { if (k === "hung") camTabs.currentIndex = 1; else if (lastKind === "hung") camTabs.currentIndex = 0 }
+                        lastKind = k
+                    }
+                }
+                StackLayout {
+                    Layout.fillWidth: true; Layout.preferredHeight: 300
+                    currentIndex: camTabs.currentIndex
+                    ColumnLayout {
+                        Repeater {
+                            model: [["distance", "Distance", 20, 1500, " ft"], ["angle", "Angle round him", -180, 180, "°"], ["height", "Height", -80, 80, "°"],
+                                    ["zoom", "Lens (wide ↔ long)", 5, 140, "°"], ["roll", "Roll", -45, 45, "°"]]
+                            delegate: RowLayout {
+                                Layout.fillWidth: true
+                                Label { text: modelData[1]; Layout.preferredWidth: 150 }
+                                Slider {
+                                    Layout.fillWidth: true; from: modelData[2]; to: modelData[3]
+                                    value: st.rig[modelData[0]]
+                                    onMoved: { const c = {}; c[modelData[0]] = value; rig(c) }
+                                }
+                                Label { text: Math.round(st.rig[modelData[0]]) + modelData[4]; Layout.preferredWidth: 60 }
+                            }
                         }
-                        Label { text: Math.round(st.rig[modelData[0]]) + modelData[4]; Layout.preferredWidth: 60 }
+                        Item { Layout.fillHeight: true }
+                    }
+                    CameraMap {
+                        st: win.st; theme: win.theme
+                        onChangeRig: (changes) => rig(Object.assign({kind: "hung", hung: true}, changes))
                     }
                 }
             }

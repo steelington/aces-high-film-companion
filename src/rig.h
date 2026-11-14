@@ -21,8 +21,10 @@ struct Rig {
     double zoom = 60;        // the lens, degrees across
     double roll = 0;         // degrees
     int target = -1;         // padlock: the aircraft to keep in frame
-    double hungX = 0, hungAlt = 0, hungZ = 0;   // hung: where the camera stands (set by hangHere)
+    double hungX = 0, hungAlt = 0, hungZ = 0;   // hung: where the camera stands (set by hangHere, or dragged on the map)
     bool hung = false;
+    QString hungAim = "him";                     // hung: "him" (turns to keep him in frame) or "free" (looks where it's set)
+    double hungYaw = 0, hungPitch = 0;           // hung, free aim: degrees (yaw 0 looks along +z, + turns left; pitch + up)
 
     QJsonObject toJson() const;
     static Rig fromJson(const QJsonObject &o);

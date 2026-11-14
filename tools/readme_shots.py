@@ -7,7 +7,7 @@ the local API; each scene is set up, then the two windows are captured together 
 The film's path shows in the viewer's title bar: open it from a neutral place (e.g. a `subst` drive letter).
 Windows only; both windows come up on the left-most screen and close again at the end. Retake when the window changes.
 """
-import argparse, ctypes, json, os, subprocess, time, urllib.request
+import argparse, math, ctypes, json, os, subprocess, time, urllib.request
 import ctypes.wintypes as wt
 from PIL import Image, ImageGrab
 
@@ -24,6 +24,14 @@ def call(method, **params):
     if not r["ok"]: raise RuntimeError(f"{method}: {r['error']}")
     return r["result"]
 
+
+
+def hang_ahead(ahead=800, right=300, below=60, zoom=20):
+    """The map's scene: a camera hung beside his path a little ahead of him, watching him fly towards it."""
+    st = call("status"); me = next(q for q in st["planes"] if q["id"] == st["me"])
+    y = me["yaw"]; fx, fz = -math.sin(y), math.cos(y); rx, rz = math.cos(y), math.sin(y)
+    call("setRig", rig=dict(st["rig"], kind="hung", hung=True, hungX=me["x"] + fx * ahead + rx * right, hungZ=me["z"] + fz * ahead + rz * right,
+                            hungAlt=me["alt"] - below, hungAim="him", zoom=zoom))
 
 def wait(cond, secs=60):
     t = time.time()
@@ -107,7 +115,7 @@ def main():
     ap.add_argument("--exe", default=os.path.join(ROOT, "build", "dist", "film_companion.exe"))
     a = ap.parse_args()
     os.makedirs(IMG, exist_ok=True)
-    p = subprocess.Popen([a.exe, "--tablet"], cwd=os.path.dirname(a.exe))
+    p = subprocess.Popen([a.exe, "--tablet", "--pictures"], cwd=os.path.dirname(a.exe))   # --pictures: no pairing line in them
     vpid = None
     try:
         wait(lambda: call("status") is not None)
@@ -127,6 +135,10 @@ def main():
         viewer = windows_of(vpid)[0]
 
         call("seek", time=a.time, rough=True); call("seek", time=a.time)
+        wait(lambda: (call("status").get("map") or {}).get("tracks"), 60); time.sleep(1)
+        hang_ahead(); time.sleep(2)
+        grab("0_map", comp, viewer)   # first: what only the companion does (Steely, 14 Nov 2026)
+
         call("setRig", rig=dict(kind="orbit", angle=0, height=12, distance=90, zoom=60))
         grab("1_camera", comp, viewer)
 

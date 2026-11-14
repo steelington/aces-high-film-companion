@@ -31,7 +31,7 @@ Core::Core(QObject *parent) : QObject(parent) {
 }
 
 QStringList Core::methods() const {
-    return {"status", "startViewer", "films", "open", "play", "pause", "seek", "planes", "setRig", "hangHere", "preview",
+    return {"status", "startViewer", "films", "open", "play", "pause", "seek", "planes", "mapData", "setRig", "hangHere", "preview",
             "addShot", "updateShot", "deleteShot", "clearShots", "killShots", "savePlan", "loadPlan", "saveCams", "render", "still",
             "findViewer"};
 }
@@ -40,7 +40,7 @@ QJsonObject Core::state() const {
     return {{"connected", m_link.connected()}, {"protocol", m_link.protocol()}, {"film", m_film}, {"length", m_length},
             {"time", m_time}, {"playing", m_playing}, {"me", m_me}, {"preview", m_preview}, {"rendering", m_rendering},
             {"waiting", m_waiting}, {"viewerPath", m_viewerPath}, {"rig", m_rig.toJson()}, {"shots", shotsJson()["shots"]},
-            {"marks", m_marks}, {"planes", m_planes}, {"lastRender", m_lastRender}, {"videosFolder", videosFolder()}};
+            {"marks", m_marks}, {"planes", m_planes}, {"map", m_map}, {"lastRender", m_lastRender}, {"videosFolder", videosFolder()}};
 }
 
 // Where renders go by default: AcesHighFilms in the user's Videos folder, or C:\AcesHighFilms if that path has a
@@ -106,6 +106,54 @@ void Core::readPlanes(std::function<void()> then) {
             emit changed();
         }
         if (then) then();
+    });
+}
+
+// The camera map's picture of the moment (Steely, 14 Nov 2026: "just the kind of thing a non AI user needs"): every
+// aircraft's path from 15 s before now to 15 s after, at half-second steps (`tracks`, which leaves the film where it was),
+// and, where the viewer has `objects` (protocol 6 on), the buildings within 8,000 ft of him, with their real size from
+// protocol 7. The window draws it top-down and moves the hung camera on it. Read after an exact seek, a pause or an
+// open - never while scrubbing.
+void Core::readMap() {
+    if (!m_link.connected() || m_film.isEmpty()) return;
+    const double a = std::max(0.0, m_time - 15), b = std::min(m_length, m_time + 15);
+    if (b <= a) return;
+    m_link.sendLatest("tracks", {QString("tracks %1 %2 0.5").arg(n(a, 2), n(b, 2))}, [this, a, b](const QStringList &l, bool err) {
+        if (err) return;
+        static const QRegularExpression re(R"(^track (\S+) (\d+) (\S+) (\S+) (\S+) (\S+))");
+        QHash<int, QJsonArray> paths;
+        for (const QString &line : l) {
+            const auto m = re.match(line);
+            if (!m.hasMatch()) continue;
+            paths[m.captured(2).toInt()].append(QJsonArray{m.captured(1).toDouble(), m.captured(3).toDouble(), m.captured(4).toDouble(),
+                                                           m.captured(5).toDouble(), m.captured(6).toDouble()});
+        }
+        QJsonObject tracks;
+        for (auto it = paths.begin(); it != paths.end(); ++it) tracks[QString::number(it.key())] = it.value();
+        m_map = QJsonObject{{"from", a}, {"to", b}, {"tracks", tracks}, {"objects", m_map.value("objects")}};
+        emit changed();
+        // Buildings near him (or near where he is in the paths), from the viewer's objects list.
+        Pose me;
+        if (m_link.protocol() < 6 || (!planeOf(m_me, me) && paths.value(m_me).isEmpty())) return;
+        if (!planeOf(m_me, me)) { const QJsonArray p = paths.value(m_me).first().toArray(); me.x = p[1].toDouble(); me.z = p[3].toDouble(); }
+        const bool sized = m_link.protocol() >= 7;
+        m_link.sendLatest("objects", {QString("objects near %1 %2 8000 up%3").arg(n(me.x, 0), n(me.z, 0), sized ? " size" : "")},
+                          [this, sized](const QStringList &l, bool err) {
+            if (err) return;
+            static const QRegularExpression re(R"re(^object \d+ \S+ "([^"]*)" \S+ (\S+) \S+ (\S+) (\S+) (\S+) \S+(?: size (\S+) (\S+))?)re");
+            QJsonArray objs;
+            for (const QString &line : l) {
+                const auto m = re.match(line);
+                if (!m.hasMatch()) continue;
+                const double r = m.captured(5).toDouble();
+                const double w = sized && m.lastCapturedIndex() >= 7 ? m.captured(6).toDouble() : r * 1.2;
+                const double len = sized && m.lastCapturedIndex() >= 7 ? m.captured(7).toDouble() : r * 1.2;
+                if (w < 1 || len < 1) continue;   // entry markers and the like: nothing to see
+                objs.append(QJsonArray{m.captured(2).toDouble(), m.captured(3).toDouble(), w, len, m.captured(4).toDouble(), m.captured(1)});
+            }
+            m_map["objects"] = objs;
+            emit changed();
+        });
     });
 }
 
@@ -237,7 +285,7 @@ void Core::call(const QString &method, const QJsonObject &p, Done done) {
             m_film = path; m_length = m.hasMatch() ? m.captured(2).toDouble() : 0; m_time = 0; m_playing = false;
             m_me = -1; m_marks = {}; m_planes = {}; m_waiting.clear();
             emit changed();
-            readPlanes(); loadMarks();
+            readPlanes([this] { readMap(); }); loadMarks();
             ok({{"film", path}, {"length", m_length}});
         }, 180000);
         return;
@@ -246,7 +294,7 @@ void Core::call(const QString &method, const QJsonObject &p, Done done) {
         m_link.send(method, [this, method, ok, fail](const QStringList &l, bool err) {
             if (err) { fail(l.value(0)); return; }
             m_playing = method == "play";
-            if (m_playing) m_poll.start(); else { m_poll.stop(); refreshTime(); readPlanes(); }
+            if (m_playing) m_poll.start(); else { m_poll.stop(); refreshTime(); readPlanes([this] { readMap(); }); }
             emit changed(); ok();
         });
         return;
@@ -255,15 +303,16 @@ void Core::call(const QString &method, const QJsonObject &p, Done done) {
         const double t = std::clamp(p["time"].toDouble(), 0.0, m_length);
         const bool rough = p["rough"].toBool();
         // While scrubbing only the last position matters: a newer seek replaces one still waiting.
-        m_link.sendLatest("seek", {QString("seek %1%2").arg(n(t)).arg(rough ? " rough" : "")}, [this, ok, fail, t](const QStringList &l, bool err) {
+        m_link.sendLatest("seek", {QString("seek %1%2").arg(n(t)).arg(rough ? " rough" : "")}, [this, ok, fail, t, rough](const QStringList &l, bool err) {
             if (err) { fail(l.value(0, "seek replaced")); return; }
             m_time = t; m_playing = false; m_poll.stop();
-            readPlanes([this] { if (m_preview) applyCameras(); });
+            readPlanes([this, rough] { if (m_preview) applyCameras(); if (!rough) readMap(); });
             emit changed(); ok({{"time", t}});
         });
         return;
     }
     if (method == "planes") { readPlanes([this, ok] { ok({{"planes", m_planes}, {"me", m_me}}); }); return; }
+    if (method == "mapData") { readMap(); ok({{"map", m_map}}); return; }
     if (method == "setRig") {
         m_rig = Rig::fromJson(p["rig"].toObject().isEmpty() ? p : p["rig"].toObject());
         m_preview = true;

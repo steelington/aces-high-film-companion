@@ -17,7 +17,8 @@ void axes(const Pose &p, double f[3], double r[3], double u[3]) {
 
 QJsonObject Rig::toJson() const {
     return {{"kind", kind}, {"distance", distance}, {"angle", angle}, {"height", height}, {"zoom", zoom}, {"roll", roll},
-            {"target", target}, {"hung", hung}, {"hungX", hungX}, {"hungAlt", hungAlt}, {"hungZ", hungZ}};
+            {"target", target}, {"hung", hung}, {"hungX", hungX}, {"hungAlt", hungAlt}, {"hungZ", hungZ},
+            {"hungAim", hungAim}, {"hungYaw", hungYaw}, {"hungPitch", hungPitch}};
 }
 
 Rig Rig::fromJson(const QJsonObject &o) {
@@ -27,6 +28,8 @@ Rig Rig::fromJson(const QJsonObject &o) {
     r.zoom = o.value("zoom").toDouble(r.zoom); r.roll = o.value("roll").toDouble(r.roll);
     r.target = o.value("target").toInt(r.target); r.hung = o.value("hung").toBool(r.hung);
     r.hungX = o.value("hungX").toDouble(); r.hungAlt = o.value("hungAlt").toDouble(); r.hungZ = o.value("hungZ").toDouble();
+    r.hungAim = o.value("hungAim").toString(r.hungAim);
+    r.hungYaw = o.value("hungYaw").toDouble(); r.hungPitch = o.value("hungPitch").toDouble();
     return r;
 }
 
@@ -49,7 +52,7 @@ void Rig::hangHere(const Pose &me) {
     const double p[3] = {me.x, me.alt, me.z};
     double w[3];
     for (int i = 0; i < 3; ++i) w[i] = p[i] + r[i] * right + u[i] * up + f[i] * ahead;
-    hungX = w[0]; hungAlt = w[1]; hungZ = w[2]; hung = true;
+    hungX = w[0]; hungAlt = w[1]; hungZ = w[2]; hung = true; hungAim = "him";
 }
 
 QString Rig::camLine(double start, double duration, int me, const Pose &mePose) const {
@@ -73,6 +76,9 @@ QString Rig::camLine(double start, double duration, int me, const Pose &mePose) 
     }
     if (kind == "hung") {
         if (!hung) return {};
+        if (hungAim == "free")   // looks where it was turned on the map; he flies through its picture
+            return head + QString("fixed %1 %2 %3 %4 %5 %6 %7").arg(n(hungX, 1), n(hungAlt, 1), n(hungZ, 1),
+                n(qDegreesToRadians(hungYaw)), n(qDegreesToRadians(std::clamp(hungPitch, -89.0, 89.0))), n(rollR), n(fov));
         const double dx = mePose.x - hungX, dy = mePose.alt - hungAlt, dz = mePose.z - hungZ;
         const double y = std::atan2(-dx, dz), p = std::atan2(dy, std::hypot(dx, dz));
         return head + QString("fixed %1 %2 %3 %4 %5 %6 %7 at %8").arg(n(hungX, 1), n(hungAlt, 1), n(hungZ, 1), n(y), n(p), n(rollR), n(fov)).arg(who);

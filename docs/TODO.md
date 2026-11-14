@@ -20,6 +20,9 @@ The one list. Update it with every change; the manual (MANUAL.md) changes with e
 - [ ] **Tablet page:** off unless started with `--tablet`, until HiTech gives his view (hitech repo direct/NEXT.md).
 
 ## Done
+- [x] **Camera map** (14 Nov 2026, Steely: "just the kind of thing a non AI user needs"): top-down paths ±15 s, buildings,
+      the hung camera with its cone; drag to move, drag the cone's dot to turn (free aim), double-click to hang; height and
+      tilt. README leads with what only the companion does (Steely: unique features first, said in the text).
 - [x] **0.1.0 released** (13 Nov 2026): repo public, GitHub release v0.1.0 with the zip. Steely published it so HiTech
       could see it (he'd asked to); his PM answer to the release question not yet in the hitech repo.
 - [x] v1: viewer link, camera rig and sliders, live preview, shots, render; docking; studio look and icon; packaging;

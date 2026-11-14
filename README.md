@@ -7,7 +7,17 @@ render the video with the film's sound.
 It drives the viewer through its socket only - the same published commands an AI assistant uses - and adds nothing
 to the game or the viewer.
 
-![The companion beside the film viewer](docs/img/howto_1_camera.png)
+## Only in the companion
+
+- **A camera map.** See the moment from above: your path, everyone else's, the buildings around you, and the camera
+  with the cone of what it sees. **Drag the camera** to move it, **drag the dot on its cone** to turn it, or
+  double-click anywhere to hang a new camera there. You always know where your camera is and where it's pointing.
+- **The live picture.** The film viewer itself shows the camera's picture as you drag, a frame later. No preview
+  clips to wait for.
+- **The viewer beside you.** The viewer parks itself against the companion and stays there, so the controls and the
+  picture are side by side.
+
+![The camera map: a camera hung beside his path, watching him fly towards it, and its picture in the viewer](docs/img/howto_0_map.png)
 
 ## Download
 
@@ -25,10 +35,13 @@ menu.
 turns green, press **Choose…** and open one of your films. The viewer parks itself beside the companion. Your kills,
 hits and landings are marked along the timeline: drag the slider to the moment you want.
 
+![The companion beside the film viewer](docs/img/howto_1_camera.png)
+
 **2. Pick a camera and move it.** Press a camera - **Cockpit**, **Outside**, **Chase**, **Padlock** (keeps a bandit
 in frame), **Hung here** (a camera left in the sky), **Ride his bomb** - or one of the ready angles (**Behind**,
 **Left side**, **Ahead, looking back**...). Then fine-tune it with the sliders: distance, angle round him, height,
-lens and roll. The viewer's picture follows as you drag.
+lens and roll. The viewer's picture follows as you drag. Or hang a camera on the **Map** tab: double-click where you
+want it, drag it about, turn it by the dot on its cone, and choose **Watch him** or **Look where it points**.
 
 ![Moving the camera: ahead and to the side, looking back at him](docs/img/howto_2_angle.png)
 

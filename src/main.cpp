@@ -24,11 +24,16 @@ int main(int argc, char *argv[]) {
     engine.rootContext()->setContextProperty("core", &core);
     engine.rootContext()->setContextProperty("api", &api);
     engine.rootContext()->setContextProperty("dock", &dock);
-    engine.rootContext()->setContextProperty("grabbing", app.arguments().contains("--grab"));   // pictures for the manual
+    // Pictures for the manual and README (--grab off-screen, --pictures on screen): no pairing line (the home network
+    // address and code) and no status line in them, whatever the cropping does.
+    engine.rootContext()->setContextProperty("grabbing", app.arguments().contains("--grab") || app.arguments().contains("--pictures"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app, [] { QCoreApplication::exit(1); }, Qt::QueuedConnection);
     engine.loadFromModule("Companion", "Main");
     auto *window = engine.rootObjects().isEmpty() ? nullptr : qobject_cast<QQuickWindow *>(engine.rootObjects().first());
-    if (window) dock.setCompanion(window);
+    // Off-screen (pictures for the manual) there is no real window to dock against: docking would park the real viewer
+    // at the off-screen window's place, stretched across whatever screens that lands on (14 Nov 2026). The switch
+    // stays as the user set it; only the docking itself is skipped.
+    if (window && QGuiApplication::platformName() != "offscreen") dock.setCompanion(window);
     // --grab <file.png>: save a picture of the window after it has settled, then quit (for the manual's screenshots;
     // with QT_QPA_PLATFORM=offscreen nothing appears on screen).
     // --grab-after <s>: wait that long first (time to open a film and set a camera through the local API).
